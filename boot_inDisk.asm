@@ -108,7 +108,6 @@ cpy_boot_fromDisk:
                 int     13H
                 ret
 
-
 ; ===========================================
 setIP:          mov     ax,0
                 push    ax
@@ -120,7 +119,7 @@ setIP:          mov     ax,0
 introduce_end:  nop
 
 ; <<<<<<<<<<<<<<<<<<<<<<<这里就相当于新的程序一样>>>>>>>>>>>>>>>>>>>>>>
-; ==================Boot=====================
+; ==================OS=====================
 Boot:           jmp     BOOT_START
 
 OPTION_1        db      '1) restart PC',0
@@ -531,7 +530,6 @@ setCmosTime:    mov     dx,ds:[si]              ; if dx = '12'
                 ret
 Boot_END:       nop
 ; <<<<<<<<<<<<<<<<<<<<<<<---END--->>>>>>>>>>>>>>>>>>>>>>
-
 
 code ends
 end start
