@@ -147,10 +147,12 @@ clearBuffRet:   ret
 isChooseOne:    mov     di,160*3
                 mov     byte ptr es:[di],'1'
                 mov     byte ptr es:[di+1],02H
+                call    restart_PC
                 jmp     choose_option
 isChooseTwo:    mov     di,160*3
                 mov     byte ptr es:[di],'2'
                 mov     byte ptr es:[di+1],02H
+                call    start_os
                 jmp     choose_option
 
 isChooseThree:  mov     di,160*3
@@ -250,7 +252,31 @@ chaneTimeColor: inc     byte ptr es:[di]
                 pop     cx
                 pop     ax
                 ret
+; >>=============== FUN1: restart PC====================
+restart_PC:     mov     bx,0FFFFH
+                push    bx
+                mov     bx,0
+                push    bx
+                retf
+; >>=============== FUN2: start_os====================
+start_os:       mov     bx,0
+                mov     es,bx
+                mov     bx,7c00H
 
+                mov     dl,80H
+                mov     dh,0
+                mov     ch,0
+                mov     cl,1
+                mov     al,1
+                mov     ah,2
+                int     13H
+
+                mov     bx,0
+                push    bx
+                mov     bx,7c00H
+                push    bx
+                retf
+                ret
 ; >>=============== FUN3: show clock====================
 show_style:     mov     si,OFFSET CLOCK_STYLE - OFFSET Boot + 7E00H
                 mov     di,160*20
