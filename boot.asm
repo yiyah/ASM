@@ -53,6 +53,7 @@ ADDRESS_OPTION  dw      OFFSET  OPTION_1 - OFFSET Boot + 7E00H
 
 CLOCK_STYLE     db      'YY-MM-DD HH:MM:SS',0
 CLOCK_ADDR      db      9,8,7,4,2,0
+STRING_STACK    db      12      dup     ('0'),0,0,0                     ; set clock 用的
 
 BOOT_START:     call    Boot_init_reg
                 call    clear_screen
@@ -90,9 +91,12 @@ clearScreen:    mov     es:[di],ax
 ; 把字符串的首地址放到 ds:[si], ah 是颜色
 ; 显示到 es:[di]
 show_string:    push    ax
+                push    bx
                 push    si
                 push    di
-
+                push    es
+                mov     bx,0B800H
+                mov     es,bx
 showString:     mov     al,ds:[si]
                 cmp     al,0
                 je      showStringRet
@@ -100,8 +104,10 @@ showString:     mov     al,ds:[si]
                 add     si,1
                 add     di,2
                 jmp     showString
-showStringRet:  pop     di
+showStringRet:  pop     es
+                pop     di
                 pop     si
+                pop     bx
                 pop     ax
                 ret
 
@@ -156,6 +162,7 @@ isChooseThree:  mov     di,160*3
 isChooseFour:   mov     di,160*3 
                 mov     byte ptr es:[di],'4'
                 mov     byte ptr es:[di+1],02H
+                call    set_clock
                 jmp     choose_option
 
 ; >>===============choose_option=========================
@@ -243,7 +250,6 @@ chaneTimeColor: inc     byte ptr es:[di]
                 pop     cx
                 pop     ax
                 ret
-; >>=============== FUN1: restart pc====================
 
 ; >>=============== FUN3: show clock====================
 show_style:     mov     si,OFFSET CLOCK_STYLE - OFFSET Boot + 7E00H
@@ -252,7 +258,7 @@ show_style:     mov     si,OFFSET CLOCK_STYLE - OFFSET Boot + 7E00H
                 ret
 
 show_clock:     call    show_style
-                call    set_new_int9
+                call    set_new_int9            ; 目的是自己管理键盘中断
 showTime:       mov     si,OFFSET CLOCK_ADDR - OFFSET Boot + 7E00H
                 mov     di,160*20
                 mov     cx,6                    ; 循环 6 次从 CMOS 里取时间
@@ -275,10 +281,147 @@ showClock:      mov     al,ds:[si]
                 add     di,6                    ; 显示的位置 +6
                 loop    showClock
                 jmp     showTime
-show_clockRet:  call    set_old_int9
+show_clockRet:  call    set_old_int9            ; 程序退出，设回原来的中断
+                ret
+
+; >>=============== FUN4: set clock ====================
+set_clock:      call    clear_string_stack
+                call    show_string_stack
+                call    get_string
+                call    set_cmos_time
+
+                ret
+; 作用是将 dx 复制到 ds:[si]
+clear_string_stack:
+                push    ax
+                push    dx
+                push    cx
+                push    ds
+                push    si
+                mov     ax,0
+                mov     ds,ax
+                mov     si,OFFSET STRING_STACK - OFFSET Boot + 7E00H
+                mov     dx,3030H
+                mov     cx,6
+clearStringStack:
+                mov     ds:[si],dx
+                add     si,2
+                loop    clearStringStack
+
+                pop     si
+                pop     ds
+                pop     cx
+                pop     dx
+                pop     ax
+                ret
+show_string_stack:
+                push    ax
+                push    si
+                push    di
+                push    ds
+                push    es
+
+                mov     ax,0
+                mov     ds,ax
+                mov     si,OFFSET STRING_STACK - OFFSET Boot + 7E00H
+                mov     ax,0B800H
+                mov     es,ax
+                mov     di,160*4                ; 第四行显示
+                mov     ah,02H
+                call    show_string
+                pop     es
+                pop     ds
+                pop     di
+                pop     si
+                pop     ax
+                ret
+; >>=============== get_string ====================
+get_string:     push    ax
+                push    bx
+                push    es
+                push    di
+
+                mov     ax,0
+                mov     es,ax
+                mov     di,OFFSET STRING_STACK - OFFSET Boot + 7E00H
+                mov     bx,0
+                call    clear_buff              ; 不调用也行
+getString:      mov     ah,0
+                int     16H
+
+                cmp     al,'0'
+                jb      notNumber
+                cmp     al,'9'
+                ja      notNumber
+                call    char_push
+                call    show_string_stack
+                jmp     getString
+; 注意这里 cmp 变成了 ah
+notNumber:      cmp     ah,1CH                  ; Enter
+                je      getStringRet
+                cmp     ah,0EH                  ; Backspace
+                je      isBackspace
+                jmp     getString
+
+; 传进来 al, es, di,bx
+char_push:      cmp     bx,11                   ; 注意这里要比实际小1
+                ja      charPushRet
+                mov     es:[di+bx],al
+                inc     bx
+charPushRet:    ret
+char_pop:       cmp     bx,0
+                je      charPopRet
+                dec     bx                      ; 注意先自减
+                mov     byte ptr es:[di+bx],'0'          
+charPopRet:     ret
+isBackspace:    call    char_pop
+                call    clear_buff
+                call    show_string_stack
+                jmp     getString
+isEnter:        
+getStringRet:   pop     di
+                pop     es
+                pop     bx
+                pop     ax
+                ret
+; >>=============== set_cmos_time ====================
+set_cmos_time:  push    ax
+                push    bx
+                push    cx
+                push    si
+                push    ds
+                ;call    clear_screen
+                mov     ax,0
+                mov     ds,ax
+                mov     si,OFFSET STRING_STACK - OFFSET Boot + 7E00H
+                mov     bx,OFFSET CLOCK_ADDR - OFFSET Boot + 7E00H
+                mov     cx,6
+setCmosTime:    mov     dx,ds:[si]              ; if dx = '12'
+                sub     dh,30H                  ; dh = '2'
+                sub     dl,30H                  ; dl = '1'
+                and     dh,00001111B
+                shl     dl,1                    ; 要组成 12，就把 dl 左移
+                shl     dl,1
+                shl     dl,1
+                shl     dl,1
+                or      dl,dh
+                
+                mov     al,ds:[bx]              ; 访问 CMOS 哪个地址
+                out     70H,al
+                mov     al,dl                   ; 赋值
+                out     71H,al
+                
+                add     si,2
+                inc     bx
+                loop    setCmosTime
+
+                pop     ds
+                pop     si
+                pop     cx
+                pop     bx
+                pop     ax
                 ret
 Boot_END:       nop
-
 ; <<<<<<<<<<<<<<<<<<<<<<<---END--->>>>>>>>>>>>>>>>>>>>>>
 ; ============== old_int9 =====================
 save_old_int9:  push    ax
