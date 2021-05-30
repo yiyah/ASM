@@ -1,6 +1,10 @@
-; flow: start: copy Boot to 0:7E00H --> set CS:IP=0:7E00H
-; 也就是说所有的字符串，子程序 都定义在 Boot 程序中，免得被清理掉（注意此时的Boot的地址是 0:7E00H）
-; Boot程序相当于正常写一个新的程序，上面是定义一些data，下面有个start的标号 标示 程序开始。
+; 本程序运行后，会把 BOOT_START 和 OS 程序 拷贝到 软盘中
+; flow 是：开机后，系统会将软盘的 第一个扇区的程序 拷贝到 不知名地方 并且 CS:IP 指向它（自动执行）
+;       --> 这个时候，这段程序就是我们的 boot(introduce)，我们要做的就是继续把软盘中的 OS 程序拷贝到一段安全的内存地址中：0:7E00H
+;       --> 此时，我们需要把 CS:IP 指向我们的 OS
+;       --> 我们的 os 的 restart PC 和 start system 两个功能分别是：
+;           ① CS:IP = 0:0FFFFH
+;           ② 拷贝c盘（驱动号是80H）的引导程序到 0:7c00H 并把 CS:IP 指向 0:7c00H （这样就会引导本身的操作系统）
 
 
 assume ds:data,ss:stack,cs:code
@@ -20,10 +24,8 @@ start:          mov     ax,stack
                 mov     sp,128
                 call    int_reg
 
-                
-                call    cpy_boot
-                call    save_old_int9
-                call    setIP
+                call    cpy_introduce_toDisk
+                call    cpy_boot_toDisk
 
                 mov     ax,4c00H
                 int     21H
@@ -37,8 +39,87 @@ int_reg:        mov     ax,data
                 mov     es,ax
                 ret
 
+cpy_introduce_toDisk:
+                mov     bx,cs
+                mov     es,bx
+                mov     bx,OFFSET introduce
+
+                mov     dl,0
+                mov     dh,0
+                mov     ch,0
+                mov     cl,1
+                mov     al,1
+                mov     ah,3
+                int     13H
+                ret
+
+cpy_boot_toDisk:
+                mov     bx,cs
+                mov     es,bx
+                mov     bx,OFFSET Boot
+
+                mov     dl,0
+                mov     dh,0
+                mov     ch,0
+                mov     cl,2
+                mov     al,4
+                mov     ah,3
+                int     13H
+                ret
+
+; =================introduce==========================
+; 作用：引导 OS
+introduce:      mov     ax,0
+                mov     ss,ax
+                mov     sp,7c00H
+
+                call    save_old_int9           ; int9是键盘中断，后面用到，所以save
+                call    cpy_boot_fromDisk
+                call    setIP
+                ret
+
+; ============== old_int9 =====================
+save_old_int9:  push    ax
+                push    es
+
+                mov     ax,0
+                mov     es,ax
+                
+                push    es:[9*4]
+                pop     es:[200H]
+                push    es:[9*4+2]
+                pop     es:[202H]
+
+                pop     es
+                pop     ax
+                ret
+
+cpy_boot_fromDisk:
+                mov     ax,0
+                mov     es,ax
+                mov     bx,7E00H
+
+                mov     dl,0
+                mov     dh,0
+                mov     ch,0
+                mov     cl,2
+                mov     al,4
+                mov     ah,2
+                int     13H
+                ret
+
+; ===========================================
+setIP:          mov     ax,0
+                push    ax
+                mov     ax,7E00H
+                push    ax
+                retf
+
+                db      512 dup (0)
+introduce_end:  nop
+
 ; <<<<<<<<<<<<<<<<<<<<<<<这里就相当于新的程序一样>>>>>>>>>>>>>>>>>>>>>>
-; ==================Boot=====================
+; ==================OS=====================
 Boot:           jmp     BOOT_START
 
 OPTION_1        db      '1) restart PC',0
@@ -449,44 +530,6 @@ setCmosTime:    mov     dx,ds:[si]              ; if dx = '12'
                 ret
 Boot_END:       nop
 ; <<<<<<<<<<<<<<<<<<<<<<<---END--->>>>>>>>>>>>>>>>>>>>>>
-; ============== old_int9 =====================
-save_old_int9:  push    ax
-                push    es
-
-                mov     ax,0
-                mov     es,ax
-                
-                push    es:[9*4]
-                pop     es:[200H]
-                push    es:[9*4+2]
-                pop     es:[202H]
-
-                pop     es
-                pop     ax
-                ret
-
-
-; ==============cpy_boot=====================
-cpy_boot:       mov     ax,cs
-                mov     ds,ax
-                mov     si,OFFSET Boot
-
-                mov     ax,0
-                mov     es,ax
-                mov     di,7E00H
-
-                mov     cx, OFFSET Boot_END - OFFSET Boot
-                cld
-                rep     movsb
-                ret
-; ===========================================
-setIP:          mov     ax,0
-                push    ax
-                mov     ax,7E00H
-                push    ax
-                retf
-
-
 
 code ends
 end start
