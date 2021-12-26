@@ -11,9 +11,10 @@ LABEL_BOOT:
     mov     si,Bootmessage
     xor     di,di
     call    Disp_Str
-    jmp     $
+    jmp     $               ; stop here when display is finish
 
 ; Call this function when di, ds:[si] is ready
+; The string must end of 0x00
 Disp_Str:
     push    es
     push    ax
@@ -24,11 +25,11 @@ Disp_Str:
 DispStr:
     xor     cx,cx
     mov     cl,[ds:si]
-    jcxz    Disp_ret
-    mov     ch,0x02
+    jcxz    Disp_ret        ; finish display when the data is 0x00
+    mov     ch,0x02         ; set color
     mov     [es:di],cx
-    inc     si
-    add     di,2            ; the high 8bit is color
+    inc     si              ; the next index of what to show
+    add     di,2            ; the next index of where to show
     jmp     DispStr
 Disp_ret:
     pop     cx
