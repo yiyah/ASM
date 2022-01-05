@@ -11,6 +11,6 @@
 
 step1: `nasm xxx.asm -o xxx.bin`
 
-step2: `dd if=boot.bin of=mbr.img conv=notrunc`  // need generate a img
+step2: `dd if=boot.bin of=mbr.img bs=512 count=1 conv=notrunc`  // need generate an img
 
 step3: then configure Bochs and run `bochs -f bochsrc`
