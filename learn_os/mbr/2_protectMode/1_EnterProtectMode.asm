@@ -11,7 +11,7 @@ LABEL_DESC_VIDEO:   Descriptor  0xB8000,           0xFFFF, DA_DRW
 
 GDTLEN          equ     $ - LABEL_GDT   ; length of GDT
 GDTPTR          dw      GDTLEN - 1      ; limit of GDT
-                dd      0               ; segment base address of GDT
+                dd      0               ; segment base address of GDT; Modify in 16bit code
 
 ; GDT selector
 SelectorCode32      equ     LABEL_DESC_CODE32 - LABEL_GDT
