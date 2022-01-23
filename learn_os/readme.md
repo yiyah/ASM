@@ -37,3 +37,5 @@ step3: then configure Bochs and run `bochs -f bochsrc`
 
    * step3: Calculate the remaining size and replace 0
       `512 - file_size`
+
+   * Note: It also need changed when you modify your code.Because the file size maybe has changed.

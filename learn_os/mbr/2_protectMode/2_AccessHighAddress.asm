@@ -101,6 +101,13 @@ LABEL_SEG_CODE32:
     mov     edi,0
     call    ClearScreen
     call    DispStr
+    call    TestWrite
+
+    mov     edi,3*80*2+15*2
+    mov     ax,SelectorTest
+    mov     ds,ax
+    mov     esi,0
+    call    DispStr     ; ds:esi edi
     jmp     $
 
 ; ===================================
@@ -131,6 +138,7 @@ Clear_Screen:
     ret
 
 ; ===================================
+; Function: Display string which end with 0
 ; param: edi
 ; param: ds:esi
 ; ===================================
@@ -159,8 +167,43 @@ Disp_Ret:
     pop     ax
     ret
 
+; ===================================
+; Function: Write something in address 0x500000
+; param[go]:   es:edi
+; param[from]: ds:esi
+; ===================================
+TestWrite:
+    push    ax
+    push    es
+    push    ds
+    push    esi
+    push    edi
+
+    mov     ax,SelectorTest
+    mov     es,ax
+    xor     edi,edi
+    mov     ax,SelectorData
+    mov     ds,ax
+    mov     esi,OffsetStrTest
+    cld     ; set the ds:esi auto increase
+Test_Write:
+    lodsb   ; mov ds:esi to al and esi increase automally
+    test    al,al   ; al & al, set flag if equal 0. Will be 0 only al=0
+    jz      Test_Write_Ret
+    mov     [es:edi],al
+    inc     edi
+    jmp     Test_Write
+Test_Write_Ret:
+    mov     [es:edi],al      ; add 0 at last
+    pop     edi
+    pop     esi
+    pop     ds
+    pop     es
+    pop     ax
+    ret
+
 SegCode32Len    equ     $ - LABEL_SEG_CODE32
 ; END of [SECTION .s32]
 
-times   169   db  0
+times   96   db  0
 dw      0xAA55
