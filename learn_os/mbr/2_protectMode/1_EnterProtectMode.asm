@@ -76,3 +76,6 @@ LABEL_SEG_CODE32:
 
 SegCode32Len    equ     $ - LABEL_SEG_CODE32
 ; END of [SECTION .s32]
+
+times   365 db 0  ; replce the first argument with (512 - file_size)
+dw      0xAA55
