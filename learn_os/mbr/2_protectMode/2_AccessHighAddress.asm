@@ -41,7 +41,7 @@ PMMessage:          db      'In Protect Mode now',0
 StrTest:            db      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',0
 
 OffsetRMMessage     equ     RMMessage - $$
-OffsetPMMessage     equ     PMMessage - $$
+OffsetPMMessage     equ     PMMessage - LABEL_DATA
 OffsetStrTest       equ     StrTest   - LABEL_DATA
 DataLen             equ     $ - LABEL_DATA
 ; END of [SECTION .data1]
@@ -99,8 +99,36 @@ LABEL_SEG_CODE32:
     mov     ds,ax
     mov     esi,OffsetPMMessage
     mov     edi,0
+    call    ClearScreen
     call    DispStr
     jmp     $
+
+; ===================================
+; Function: clear screen
+; ===================================
+ClearScreen:
+    push    eax
+    push    ecx
+    push    es
+    push    edi
+
+    xor     eax,eax
+    xor     ecx,ecx
+    xor     edi,edi
+    mov     ax,SelectorVideo
+    mov     es,ax
+    mov     cx,25*80*2      ; 4000 Bytes
+    mov     ax,0
+Clear_Screen:
+    mov     [es:edi],ax
+    add     edi,2
+    loop    Clear_Screen
+
+    pop     edi
+    pop     es
+    pop     ecx
+    pop     eax
+    ret
 
 ; ===================================
 ; param: edi
@@ -134,5 +162,5 @@ Disp_Ret:
 SegCode32Len    equ     $ - LABEL_SEG_CODE32
 ; END of [SECTION .s32]
 
-times   212   db  0
+times   169   db  0
 dw      0xAA55
