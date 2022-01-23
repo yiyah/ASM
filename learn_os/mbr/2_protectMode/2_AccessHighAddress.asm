@@ -117,8 +117,8 @@ ClearScreen:
     xor     edi,edi
     mov     ax,SelectorVideo
     mov     es,ax
-    mov     cx,25*80*2      ; 4000 Bytes
-    mov     ax,0
+    mov     cx,25*80        ; total 4000 Bytes
+    mov     ax,0            ; but I use ax so it will div 2
 Clear_Screen:
     mov     [es:edi],ax
     add     edi,2
