@@ -4,6 +4,8 @@
 
 [SECTION .gdt]
 LABEL_GDT:          Descriptor        0,                0,   0
+LABEL_DESC_NORMAL:  Descriptor        0,           0XFFFF, DA_DRW
+LABEL_DESC_CODE16:  Descriptor        0,           0XFFFF, DA_C
 LABEL_DESC_CODE32:  Descriptor        0, SegCode32Len - 1, DA_32 + DA_C
 LABEL_DESC_VIDEO:   Descriptor  0xB8000,           0xFFFF, DA_DRW
 LABEL_DESC_STACK:   Descriptor        0,       TopOfStack, DA_DRWA + DA_32
@@ -15,6 +17,8 @@ GDT_PTR    dw   GDT_LEN - 1
            dd   0
 
 ; selector
+SelectorNormal      equ  LABEL_DESC_NORMAL - LABEL_GDT
+SelectorCode16      equ  LABEL_DESC_CODE16 - LABEL_GDT
 SelectorCode32      equ  LABEL_DESC_CODE32 - LABEL_GDT
 SelectorVideo       equ  LABEL_DESC_VIDEO  - LABEL_GDT
 SelectorStack       equ  LABEL_DESC_STACK  - LABEL_GDT
@@ -34,7 +38,7 @@ TopOfStack      equ     $ - LABEL_STACK - 1 ; Actually it's length of stack + 1
 ALIGN  32
 [BITS   32]
 LABEL_DATA:
-StackPointInRealMode    dw      0
+StackPointerInRealMode    dw      0
 RMMessage:          db      'In Real mode', 0
 PMMessage:          db      'In Protect Mode now',0
 StrTest:            db      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',0
@@ -52,6 +56,10 @@ LABEL_BEGIN:
     mov     ss,ax
     mov     sp,0x100
 
+    ; the jmp is "0EAH(1 byte) OFFSET(2 bytes) SEGMENT(2 bytes)"
+	mov	[LABEL_GO_BACK_TO_REAL+3], ax   ; so this will change segment address
+	mov	[StackPointerInRealMode], sp
+
     ; Init Descriptor of stack
     xor     eax,eax
     mov     ax,cs
@@ -61,6 +69,16 @@ LABEL_BEGIN:
     shr     eax,16
     mov     [LABEL_DESC_STACK+4],al
     mov     [LABEL_DESC_STACK+7],ah
+
+    ; Init Descriptor of code16
+    xor     eax,eax
+    mov     ax,cs
+    shl     eax,4
+    add     eax,LABEL_SEG_CODE16
+    mov     [LABEL_DESC_CODE16+2],ax
+    shr     eax,16
+    mov     [LABEL_DESC_CODE16+4],al
+    mov     [LABEL_DESC_CODE16+7],ah
 
     ; Init Descriptor of code32
     xor     eax,eax
@@ -102,6 +120,22 @@ LABEL_BEGIN:
 
     jmp     dword SelectorCode32:0
 
+LABEL_REAL_ENTRY:
+    mov     ax,cs
+    mov     ds,ax
+    mov     es,ax
+    mov     ss,ax
+    mov     sp,[StackPointerInRealMode]
+
+    in      al,92H
+    and     al,11111101B
+    out     92H,al
+
+    sti
+
+	mov	ax, 0x4c00
+	int	21h		    ; DOS
+
 ; END of [SECTION .s16]
 
 [SECTION .s32]
@@ -114,17 +148,17 @@ LABEL_SEG_CODE32:
     mov     ax,SelectorData
     mov     ds,ax
     mov     esi,OffsetPMMessage
-    mov     edi,0
+    mov     edi,3*80*2
     call    ClearScreen
     call    DispStr
     call    TestWrite
 
-    mov     edi,3*80*2+15*2
+    mov     edi,5*80*2+15*2
     mov     ax,SelectorTest
     mov     ds,ax
     mov     esi,0
     call    DispStr     ; ds:esi edi
-    jmp     $
+    jmp     SelectorCode16:0
 
 ; ===================================
 ; Function: clear screen
@@ -221,5 +255,23 @@ Test_Write_Ret:
 SegCode32Len    equ     $ - LABEL_SEG_CODE32
 ; END of [SECTION .s32]
 
-times   96   db  0
-dw      0xAA55
+[SECTION .s16code]
+ALIGN	32
+[BITS   16]
+LABEL_SEG_CODE16:
+    mov     ax,SelectorNormal
+    mov     ds,ax
+    mov     es,ax
+    mov     fs,ax
+    mov     gs,ax
+    mov     ss,ax
+
+    mov     eax,cr0
+    and     eax,11111110B
+    mov     cr0,eax
+
+LABEL_GO_BACK_TO_REAL:
+    jmp     0:LABEL_REAL_ENTRY      ; segment had been modified in real mode
+SegCode16Len    equ     $ - $$
+
+; END OF [SECTION .s16code]
