@@ -95,6 +95,10 @@ LABEL_BEGIN:
 [SECTION .s32]
 [BITS  32]
 LABEL_SEG_CODE32:
+    mov     ax,SelectorStack
+    mov     ss,ax
+    mov     esp,511     ; top of stack
+
     mov     ax,SelectorData
     mov     ds,ax
     mov     esi,OffsetPMMessage
@@ -205,5 +209,5 @@ Test_Write_Ret:
 SegCode32Len    equ     $ - LABEL_SEG_CODE32
 ; END of [SECTION .s32]
 
-times   96   db  0
+times   85   db  0
 dw      0xAA55
