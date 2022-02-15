@@ -141,6 +141,12 @@ LABEL_REAL_ENTRY:
 [SECTION .s32]
 [BITS  32]
 LABEL_SEG_CODE32:
+    mov     ax,SelectorNormal
+    mov     ds,ax
+    mov     es,ax
+    mov     fs,ax
+    mov     gs,ax
+
     mov     ax,SelectorStack
     mov     ss,ax
     mov     esp,TopOfStack
@@ -166,23 +172,23 @@ LABEL_SEG_CODE32:
 ClearScreen:
     push    eax
     push    ecx
-    push    gs
+    push    es
     push    edi
 
     xor     eax,eax
     xor     ecx,ecx
     xor     edi,edi
     mov     ax,SelectorVideo
-    mov     gs,ax
+    mov     es,ax
     mov     cx,25*80        ; total 4000 Bytes
     mov     ax,0            ; but I use ax so it will div 2
 Clear_Screen:
-    mov     [gs:edi],ax
+    mov     [es:edi],ax
     add     edi,2
     loop    Clear_Screen
 
     pop     edi
-    pop     gs
+    pop     es
     pop     ecx
     pop     eax
     ret
@@ -195,24 +201,24 @@ Clear_Screen:
 DispStr:
     push    ax
     push    ecx
-    push    gs
+    push    es
     push    esi
     push    edi
     mov     ax,SelectorVideo
-    mov     gs,ax
+    mov     es,ax
 Disp_Str:
     xor     ecx,ecx
     mov     cl,[ds:esi]
     jcxz    Disp_Ret
     mov     ch,0x02     ; set green
-    mov     [gs:edi],cx ; display
+    mov     [es:edi],cx ; display
     inc     esi
     add     edi,2
     jmp     Disp_Str    ; stop when cx = 0    
 Disp_Ret:
     pop     edi
     pop     esi
-    pop     gs
+    pop     es
     pop     ecx
     pop     ax
     ret
@@ -224,13 +230,13 @@ Disp_Ret:
 ; ===================================
 TestWrite:
     push    ax
-    push    gs
+    push    es
     push    ds
     push    esi
     push    edi
 
     mov     ax,SelectorTest
-    mov     gs,ax
+    mov     es,ax
     xor     edi,edi
     mov     ax,SelectorData
     mov     ds,ax
@@ -240,15 +246,15 @@ Test_Write:
     lodsb   ; mov ds:esi to al and esi increase automally
     test    al,al   ; al & al, set flag if equal 0. Will be 0 only al=0
     jz      Test_Write_Ret
-    mov     [gs:edi],al
+    mov     [es:edi],al
     inc     edi
     jmp     Test_Write
 Test_Write_Ret:
-    mov     [gs:edi],al      ; add 0 at last
+    mov     [es:edi],al      ; add 0 at last
     pop     edi
     pop     esi
     pop     ds
-    pop     gs
+    pop     es
     pop     ax
     ret
 
