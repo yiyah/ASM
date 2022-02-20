@@ -3,12 +3,13 @@
     jmp     LABEL_BEGIN
 
 [SECTION .gdt]
-LABEL_DESC_GDT:     Descriptor  0,                  0,   0
-LABEL_DESC_NORMAL:  Descriptor  0,             0xFFFF, DA_DRW
-LABEL_DESC_STACK:   Descriptor  0,         TopOfStack, DA_DRWA | DA_32
-LABEL_DESC_DATA:    Descriptor  0,      LenOfData - 1, DA_DRW
-LABEL_DESC_CODE32:  Descriptor  0,    LenOfCode32 - 1, DA_32 | DA_C
-LABEL_DESC_VIDEO:   Descriptor 0xB8000,        0xffff, DA_DRW
+LABEL_DESC_GDT:     Descriptor       0,                  0,   0
+LABEL_DESC_NORMAL:  Descriptor       0,             0xFFFF, DA_DRW
+LABEL_DESC_STACK:   Descriptor       0,         TopOfStack, DA_DRWA | DA_32
+LABEL_DESC_DATA:    Descriptor       0,      LenOfData - 1, DA_DRW
+LABEL_DESC_CODE32:  Descriptor       0,    LenOfCode32 - 1, DA_32 | DA_C
+LABEL_DESC_VIDEO:   Descriptor 0xB8000,             0xFFFF, DA_DRW
+LABEL_DESC_LDT:     Descriptor       0,       LenOfLDT - 1, DA_LDT
 
 LenOfGDT    equ     $ - LABEL_DESC_GDT
 PTR_GDT     dw      LenOfGDT - 1
@@ -20,6 +21,7 @@ SelectorStack       equ LABEL_DESC_STACK  - LABEL_DESC_GDT
 SelectorData        equ LABEL_DESC_DATA   - LABEL_DESC_GDT
 SelectorCode32      equ LABEL_DESC_CODE32 - LABEL_DESC_GDT
 SelectorVideo       equ LABEL_DESC_VIDEO  - LABEL_DESC_GDT
+SelectorLDT         equ LABEL_DESC_LDT    - LABEL_DESC_GDT
 ; END OF [SECTION .gdt]
 
 [SECTION .stack]
@@ -35,7 +37,9 @@ ALIGN   32
 [BITS   32]
 LABEL_SEG_DATA:
 PMMESSAGE:  db      'hello world!', 0
-OffsetPMMessage     equ     PMMESSAGE - LABEL_SEG_DATA
+LDTMESSAGE: db      'Now use LDT', 0
+OffsetPMMessage     equ     PMMESSAGE  - LABEL_SEG_DATA
+OffsetLDTMessage    equ     LDTMESSAGE - LABEL_SEG_DATA
 LenOfData   equ     $ - LABEL_SEG_DATA
 ; END OF [SECTION .data]
 
@@ -74,6 +78,26 @@ LABEL_BEGIN:
     shr     eax, 16
     mov     [LABEL_DESC_CODE32 + 4], al
     mov     [LABEL_DESC_CODE32 + 7], ah
+
+    ; init segment address of LDT
+    xor     eax, eax
+    mov     ax, cs
+    shl     eax, 4
+    add     eax, LABEL_LDT
+    mov     [LABEL_DESC_LDT + 2], ax
+    shr     eax, 16
+    mov     [LABEL_DESC_LDT + 4], al
+    mov     [LABEL_DESC_LDT + 7], ah
+
+    ; init selector in LDT
+    xor     eax, eax
+    mov     ax, cs
+    shl     eax, 4
+    add     eax, LABEL_CODE_A
+    mov     [LABEL_DESC_LDT_CODEA + 2], ax
+    shr     eax, 16
+    mov     [LABEL_DESC_LDT_CODEA + 4], al
+    mov     [LABEL_DESC_LDT_CODEA + 7], ah
 
     xor     eax, eax
     mov     ax, cs
@@ -117,7 +141,10 @@ LABEL_SEG_CODE32:
     call    ClearScreen
     call    DispStr
 
-    jmp     $
+    mov     ax, SelectorLDT
+    lldt    ax
+
+    jmp     SelectorCodeA:0
 
 ; ===================================
 ; Function: clear screen
@@ -178,3 +205,27 @@ Disp_Ret:
 
 LenOfCode32     equ     $ - LABEL_SEG_CODE32
 ; END OF [SECTION .s32]
+
+[SECTION .ldt]
+ALIGN   32
+LABEL_LDT:
+LABEL_DESC_LDT_CODEA:   Descriptor  0, LenOfCodeA - 1, DA_32 | DA_C
+LenOfLDT    equ     $ - $$
+
+SelectorCodeA   equ     LABEL_DESC_LDT_CODEA - LABEL_LDT + SA_TIL
+
+; END OF [SECTION .ldt]
+
+[SECTION .ldt_codea]
+ALIGN   32
+[BITS   32]
+LABEL_CODE_A:
+    mov     ax,SelectorData
+    mov     ds,ax
+    mov     esi,OffsetLDTMessage
+    mov     edi,5*80*2
+    call    DispStr
+
+    jmp     $
+LenOfCodeA      equ $ - $$
+; END OF [SECTION .ldt_codea]

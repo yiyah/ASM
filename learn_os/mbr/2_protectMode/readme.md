@@ -4,6 +4,7 @@
 
 GDT: Global Description Table
 GDTR: Global Description Table Register
+LDT: Local Description Table
 
 ## steps for enter protect mode
 
@@ -63,6 +64,23 @@ OK. We make a step as fllow:
   mov	ax, 0x4c00
   int	21h		    ; DOS
   ```
+
+## LDT
+
+* How to use LDT?
+
+  * step1: prepare LDT (include descriptor)
+  * step2: 
+
+## Summary
+
+1. What should prepare for LDT/GDT?
+
+    * The descriptor table
+    
+    * The selector
+
+    * Where the descriptor describe? It may be code, data or stack, make this.
 
 ## RESULT
 
