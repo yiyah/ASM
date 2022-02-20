@@ -9,6 +9,7 @@ LABEL_DESC_STACK:   Descriptor       0,         TopOfStack, DA_DRWA | DA_32
 LABEL_DESC_DATA:    Descriptor       0,      LenOfData - 1, DA_DRW
 LABEL_DESC_CODE32:  Descriptor       0,    LenOfCode32 - 1, DA_32 | DA_C
 LABEL_DESC_VIDEO:   Descriptor 0xB8000,             0xFFFF, DA_DRW
+LABEL_DESC_CODE16:  Descriptor       0,    LenOfcode16 - 1, DA_C
 LABEL_DESC_LDT:     Descriptor       0,       LenOfLDT - 1, DA_LDT
 
 LenOfGDT    equ     $ - LABEL_DESC_GDT
@@ -21,6 +22,7 @@ SelectorStack       equ LABEL_DESC_STACK  - LABEL_DESC_GDT
 SelectorData        equ LABEL_DESC_DATA   - LABEL_DESC_GDT
 SelectorCode32      equ LABEL_DESC_CODE32 - LABEL_DESC_GDT
 SelectorVideo       equ LABEL_DESC_VIDEO  - LABEL_DESC_GDT
+SelectorCode16      equ LABEL_DESC_CODE16 - LABEL_DESC_GDT
 SelectorLDT         equ LABEL_DESC_LDT    - LABEL_DESC_GDT
 ; END OF [SECTION .gdt]
 
@@ -36,6 +38,7 @@ TopOfStack  equ     $ - LABEL_SEG_STACK - 1
 ALIGN   32
 [BITS   32]
 LABEL_SEG_DATA:
+StackPointerInRealMode  dw  0
 PMMESSAGE:  db      'hello world!', 0
 LDTMESSAGE: db      'Now use LDT', 0
 OffsetPMMessage     equ     PMMESSAGE  - LABEL_SEG_DATA
@@ -49,6 +52,10 @@ LABEL_BEGIN:
     mov     ax, cs
     mov     ss, ax
     mov     sp, 0x100
+
+    mov     ax, cs
+    mov     [LABEL_GO_BACK_TO_REAL + 3], ax
+    mov     [StackPointerInRealMode], sp
 
     ; stack
     xor     eax, eax
@@ -70,6 +77,7 @@ LABEL_BEGIN:
     mov     [LABEL_DESC_DATA + 4], al
     mov     [LABEL_DESC_DATA + 7], ah
 
+    ; CDOE 32
     xor     eax, eax
     mov     ax, cs
     shl     eax, 4
@@ -78,6 +86,16 @@ LABEL_BEGIN:
     shr     eax, 16
     mov     [LABEL_DESC_CODE32 + 4], al
     mov     [LABEL_DESC_CODE32 + 7], ah
+
+    ; CODE 16
+    xor     eax, eax
+    mov     ax, cs
+    shl     eax, 4
+    add     eax, LABEL_SEG_CODE16
+    mov     [LABEL_DESC_CODE16 + 2], ax
+    shr     eax, 16
+    mov     [LABEL_DESC_CODE16 + 4], al
+    mov     [LABEL_DESC_CODE16 + 7], ah
 
     ; init segment address of LDT
     xor     eax, eax
@@ -118,6 +136,21 @@ LABEL_BEGIN:
 
     jmp     dword SelectorCode32:0
 
+LABEL_REAL_ENTRY:
+    mov     ax, cs
+    mov     ds, ax
+    mov     es, ax
+    mov     ss, ax
+    mov     sp, [StackPointerInRealMode]
+
+    in      al, 92H
+    and     al, 11111101B
+    out     92H, al
+
+    sti
+
+	mov	ax, 0x4C00
+	int	21h
     ; END OF [SECTION .s16]
 
 [SECTION .s32]
@@ -206,6 +239,26 @@ Disp_Ret:
 LenOfCode32     equ     $ - LABEL_SEG_CODE32
 ; END OF [SECTION .s32]
 
+[SECTION .s16code]
+ALIGN   32
+[BITS   16]
+LABEL_SEG_CODE16:
+    mov     ax, SelectorNormal
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     gs, ax
+    mov     ss, ax
+
+    mov     eax, cr0
+    and     al, 11111110B
+    mov     cr0, eax
+
+LABEL_GO_BACK_TO_REAL:
+    jmp     0:LABEL_REAL_ENTRY
+LenOfcode16     equ     $ - $$
+; END OF [SECTION .s16code]
+
 [SECTION .ldt]
 ALIGN   32
 LABEL_LDT:
@@ -226,6 +279,6 @@ LABEL_CODE_A:
     mov     edi,5*80*2
     call    DispStr
 
-    jmp     $
+    jmp     SelectorCode16:0
 LenOfCodeA      equ $ - $$
 ; END OF [SECTION .ldt_codea]

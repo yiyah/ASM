@@ -273,7 +273,7 @@ LABEL_SEG_CODE16:
     mov     ss,ax
 
     mov     eax,cr0
-    and     eax,11111110B
+    and     al,11111110B
     mov     cr0,eax
 
 LABEL_GO_BACK_TO_REAL:

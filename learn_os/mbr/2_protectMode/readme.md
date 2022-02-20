@@ -26,7 +26,7 @@ step7: Enter protect mode
 
 Let us make clear the operation.
 
-First, you need to figure out a way to refresh the cache register when you are in protect mode. So you must jump to 16 bits code **for refresh cs** and reload a normal decsciptor to refresh ds, es, fs, gs and ss.(normal is segment attribute can r/w)
+First, you need to figure out a way to refresh the cache register when you are in protect mode. So you must jump to 16 bits code **for refresh cs** (major is it's segment limit is 0xFFFF and can r/w) and reload a normal decsciptor to refresh ds, es, fs, gs and ss.(normal is segment attribute can r/w)
 
 Second, clear the PE flag and turn off the A20.Then go back to DOS.
 
