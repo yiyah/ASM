@@ -9,7 +9,7 @@ LABEL_DESC_CODE16:  Descriptor        0,           0XFFFF, DA_C
 LABEL_DESC_CODE32:  Descriptor        0, SegCode32Len - 1, DA_32 + DA_C
 LABEL_DESC_VIDEO:   Descriptor  0xB8000,           0xFFFF, DA_DRW
 LABEL_DESC_STACK:   Descriptor        0,       TopOfStack, DA_DRWA + DA_32
-LABEL_DESC_DATA:    Descriptor        0,      DataLen - 1, DA_DRW
+LABEL_DESC_DATA:    Descriptor        0,      DataLen - 1, DA_DRW + DA_DPL1
 LABEL_DESC_TEST:    Descriptor 0x500000,           0xFFFF, DA_DRW
 
 GDT_LEN    equ  $ - LABEL_GDT
@@ -22,7 +22,7 @@ SelectorCode16      equ  LABEL_DESC_CODE16 - LABEL_GDT
 SelectorCode32      equ  LABEL_DESC_CODE32 - LABEL_GDT
 SelectorVideo       equ  LABEL_DESC_VIDEO  - LABEL_GDT
 SelectorStack       equ  LABEL_DESC_STACK  - LABEL_GDT
-SelectorData        equ  LABEL_DESC_DATA   - LABEL_GDT
+SelectorData        equ  LABEL_DESC_DATA   - LABEL_GDT + SA_RPL1
 SelectorTest        equ  LABEL_DESC_TEST   - LABEL_GDT
 ; END of [SECTION .gdt]
 

@@ -3,7 +3,18 @@ DA_C        EQU       98H   ; code seg which can run
 DA_DRW      EQU       92H   ; R/W data seg
 DA_DRWA     EQU       93H
 DA_LDT      EQU       82H   ; LDT
+
+DA_DPL0     EQU       00H
+DA_DPL1     EQU       20H
+DA_DPL2     EQU       40H
+DA_DPL3     EQU       60H
+
 SA_TIL      EQU         4   ; selector of LDT
+SA_RPL0     EQU         0
+SA_RPL1     EQU         1
+SA_RPL2     EQU         2
+SA_RPL3     EQU         3
+
 
 ; usage: Descriptor Base, Limit, Attr
 ;        Base:  dd
