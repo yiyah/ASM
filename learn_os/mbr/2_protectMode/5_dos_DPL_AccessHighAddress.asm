@@ -1,3 +1,5 @@
+; flow: LABEL_BEGIN --> LABEL_SEG_CODE32 --> LABEL_SEG_CODE16 --> LABEL_REAL_ENTRYs
+
 %include "pm.inc"
         org     0x100
         jmp     LABEL_BEGIN

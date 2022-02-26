@@ -6,7 +6,7 @@ GDT: Global Description Table
 GDTR: Global Description Table Register
 LDT: Local Description Table
 
-## steps for enter protect mode
+## Steps for enter protect mode
 
 step1: Prepare the GDT
 
@@ -69,15 +69,22 @@ OK. We make a step as fllow:
 
 * How to use LDT?
 
-  * step1: prepare LDT (include descriptor)
-  * step2: 
+  * step1: prepare LDT (include descriptor, selector)
+
+  * step2: prepare the code that will jump.(what the LDT describe)
+
+  * step3: add label, selector about LDT to GDT.(because find LDT through GDT)
+
+  * step4: init the descriptor of LDT in real mode as usal.
+
+  * step5: jump to the code whcih LDT describe before using lldt to load LDT.
 
 ## Summary
 
 1. What should prepare for LDT/GDT?
 
     * The descriptor table
-    
+
     * The selector
 
     * Where the descriptor describe? It may be code, data or stack, make this.
