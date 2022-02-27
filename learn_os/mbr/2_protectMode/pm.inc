@@ -9,6 +9,8 @@ DA_DPL1     EQU       20H
 DA_DPL2     EQU       40H
 DA_DPL3     EQU       60H
 
+DA_CGATE    EQU       8CH
+
 SA_TIL      EQU         4   ; selector of LDT
 SA_RPL0     EQU         0
 SA_RPL1     EQU         1
@@ -26,4 +28,16 @@ dw      %1 & 0xFFFF
 db      (%1 >> 16) & 0xFF
 dw      ((%2 >> 8) & 0xF00) | (%3 & 0xF0FF)
 db      (%1 >> 24) & 0xFF
+%endmacro   ; total 8 bytes
+
+; usage: Gate Selector, Offset, Paramcount, Attr
+;       Selector:   dw
+;       Offset:     dd
+;       Paramcount: db
+;       Attr:       db
+%macro Gate 4
+dw      (%2 & 0xFFFF)
+dw      %1 & 0xFFFF
+dw      (%3 & 0x1F) | ((%4 << 8) & 0xFF00)
+dw      ((%2 >> 16) & 0xFFFF)
 %endmacro   ; total 8 bytes

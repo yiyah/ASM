@@ -79,6 +79,14 @@ OK. We make a step as fllow:
 
   * step5: jump to the code whcih LDT describe before using lldt to load LDT.
 
+## GATE
+
+* How to use call gate?
+
+    * step1: add descriptor, selector and code as usual.
+
+    * step2: add descriptor, selector about GATE.
+
 ## Summary
 
 1. What should prepare for LDT/GDT?
@@ -88,6 +96,8 @@ OK. We make a step as fllow:
     * The selector
 
     * Where the descriptor describe? It may be code, data or stack, make this.
+
+    if using LDT, it just need to add the descriptor and selector again.
 
 ## RESULT
 
