@@ -10,9 +10,11 @@ LABEL_DESC_NORMAL:  Descriptor       0,             0xFFFF, DA_DRW
 LABEL_DESC_STACK:   Descriptor       0,         TopOfStack, DA_DRWA | DA_32
 LABEL_DESC_DATA:    Descriptor       0,      LenOfData - 1, DA_DRW
 LABEL_DESC_CODE32:  Descriptor       0,    LenOfCode32 - 1, DA_32 | DA_C
-LABEL_DESC_VIDEO:   Descriptor 0xB8000,             0xFFFF, DA_DRW
+LABEL_DESC_VIDEO:   Descriptor 0xB8000,             0xFFFF, DA_DRW + DA_DPL3
 LABEL_DESC_CODE16:  Descriptor       0,             0xFFFF, DA_C
 LABEL_DESC_LDT:     Descriptor       0,       LenOfLDT - 1, DA_LDT
+LABEL_DESC_STACK_RING3:Descriptor    0,    TopOfRing3Stack, DA_DRWA + DA_32 + DA_DPL3
+LABEL_DESC_CODE_RING3: Descriptor    0, LenOfcodeRing3 - 1, DA_32 + DA_C + DA_DPL3
 
 LenOfGDT    equ     $ - LABEL_DESC_GDT
 PTR_GDT     dw      LenOfGDT - 1
@@ -26,6 +28,8 @@ SelectorCode32      equ LABEL_DESC_CODE32 - LABEL_DESC_GDT
 SelectorVideo       equ LABEL_DESC_VIDEO  - LABEL_DESC_GDT
 SelectorCode16      equ LABEL_DESC_CODE16 - LABEL_DESC_GDT
 SelectorLDT         equ LABEL_DESC_LDT    - LABEL_DESC_GDT
+SelectorStackRing3  equ LABEL_DESC_STACK_RING3 - LABEL_DESC_GDT + SA_RPL3
+SelectorCodeRing3   equ LABEL_DESC_CODE_RING3 - LABEL_DESC_GDT + SA_RPL3
 ; END OF [SECTION .gdt]
 
 [SECTION .stack]
@@ -35,6 +39,14 @@ LABEL_SEG_STACK:
     times   512     db  0
 TopOfStack  equ     $ - LABEL_SEG_STACK - 1
 ; END OF [SECTION .stack]
+
+[SECTION .stackRing3]
+ALIGN   32
+[BITS   32]
+LABEL_SEG_STACK_RING3:
+    times   512     db  0
+TopOfRing3Stack  equ     $ - LABEL_SEG_STACK_RING3 - 1
+; END OF [SECTION .stackRing3]
 
 [SECTION .data]
 ALIGN   32
@@ -119,6 +131,26 @@ LABEL_BEGIN:
     mov     [LABEL_DESC_LDT_CODEA + 4], al
     mov     [LABEL_DESC_LDT_CODEA + 7], ah
 
+    ; init code of ring3
+    xor     eax, eax
+    mov     ax, cs
+    shl     eax, 4
+    add     eax, LABEL_CODE_RING3
+    mov     [LABEL_DESC_CODE_RING3 + 2], ax
+    shr     eax, 16
+    mov     [LABEL_DESC_CODE_RING3 + 4], al
+    mov     [LABEL_DESC_CODE_RING3 + 7], ah
+
+    ; init stack of ring3
+    xor     eax, eax
+    mov     ax, cs
+    shl     eax, 4
+    add     eax, LABEL_SEG_STACK_RING3
+    mov     [LABEL_DESC_STACK_RING3 + 2], ax
+    shr     eax, 16
+    mov     [LABEL_DESC_STACK_RING3 + 4], al
+    mov     [LABEL_DESC_STACK_RING3 + 7], ah
+
     xor     eax, eax
     mov     ax, cs
     shl     eax, 4
@@ -175,6 +207,13 @@ LABEL_SEG_CODE32:
     mov     edi,3*80*2
     call    ClearScreen
     call    DispStr
+
+    push    SelectorStackRing3
+    push    TopOfRing3Stack
+    push    SelectorCodeRing3
+    push    0
+    retf    ; stop here
+    ; will not run down
 
     mov     ax, SelectorLDT
     lldt    ax
@@ -284,3 +323,18 @@ LABEL_CODE_A:
     jmp     SelectorCode16:0
 LenOfCodeA      equ $ - $$
 ; END OF [SECTION .ldt_codea]
+
+[SECTION    .sring3]
+ALIGN   32
+[BITS   32]
+LABEL_CODE_RING3:
+    mov     ax,SelectorVideo
+    mov     ds,ax
+    mov     edi, 7*80+5*2
+    mov     ah, 0x02
+    mov     al, '3'
+    mov     [ds:edi], ax
+
+    jmp     $
+LenOfcodeRing3      equ     $ -$$
+; END of [SECTION    .sring3]

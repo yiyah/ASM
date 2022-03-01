@@ -83,9 +83,21 @@ OK. We make a step as fllow:
 
 * How to use call gate?
 
-    * step1: add descriptor, selector and code as usual.
+    * step1: add descriptor, selector and code as usual. (Where you want to jump)
 
     * step2: add descriptor, selector about GATE.
+
+## Ring 3
+
+* How to go to ring 3?
+
+    * step1: add descriptor, selector and code as usual. (Where you want to jump)
+
+    * step2: add stack for ring 3. (include it's selector)
+
+    * step3: modify the DPL if you maybe access some segment.
+
+    * step4: push ss, sp, cs, ip and then retf.
 
 ## Summary
 
