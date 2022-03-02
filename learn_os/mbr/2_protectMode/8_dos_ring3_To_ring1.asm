@@ -12,9 +12,12 @@ LABEL_DESC_DATA:    Descriptor       0,      LenOfData - 1, DA_DRW
 LABEL_DESC_CODE32:  Descriptor       0,    LenOfCode32 - 1, DA_32 | DA_C
 LABEL_DESC_VIDEO:   Descriptor 0xB8000,             0xFFFF, DA_DRW + DA_DPL3
 LABEL_DESC_CODE16:  Descriptor       0,             0xFFFF, DA_C
+LABEL_DESC_DEST:    Descriptor       0,  LenOfcodeDest - 1, DA_32 | DA_C
 LABEL_DESC_LDT:     Descriptor       0,       LenOfLDT - 1, DA_LDT
 LABEL_DESC_STACK_RING3:Descriptor    0,    TopOfRing3Stack, DA_DRWA + DA_32 + DA_DPL3
 LABEL_DESC_CODE_RING3: Descriptor    0, LenOfcodeRing3 - 1, DA_32 + DA_C + DA_DPL3
+
+LABEL_DESC_GATES_TEST: Gate    SelectorCodeDest,   0,    0, (DA_CGATE | DA_DPL3)    ; Note this use ()
 
 LenOfGDT    equ     $ - LABEL_DESC_GDT
 PTR_GDT     dw      LenOfGDT - 1
@@ -27,9 +30,12 @@ SelectorData        equ LABEL_DESC_DATA   - LABEL_DESC_GDT
 SelectorCode32      equ LABEL_DESC_CODE32 - LABEL_DESC_GDT
 SelectorVideo       equ LABEL_DESC_VIDEO  - LABEL_DESC_GDT
 SelectorCode16      equ LABEL_DESC_CODE16 - LABEL_DESC_GDT
+SelectorCodeDest    equ LABEL_DESC_DEST   - LABEL_DESC_GDT
 SelectorLDT         equ LABEL_DESC_LDT    - LABEL_DESC_GDT
 SelectorStackRing3  equ LABEL_DESC_STACK_RING3 - LABEL_DESC_GDT + SA_RPL3
 SelectorCodeRing3   equ LABEL_DESC_CODE_RING3 - LABEL_DESC_GDT + SA_RPL3
+
+SelCallGateTest     equ LABEL_DESC_GATES_TEST - LABEL_DESC_GDT + SA_RPL3
 ; END OF [SECTION .gdt]
 
 [SECTION .stack]
@@ -54,8 +60,10 @@ ALIGN   32
 LABEL_SEG_DATA:
 StackPointerInRealMode  dw  0
 PMMESSAGE:  db      'hello world!', 0
+GATEMSG:    db      'Ohhhh, use GATE', 0
 LDTMESSAGE: db      'Now use LDT', 0
 OffsetPMMessage     equ     PMMESSAGE  - LABEL_SEG_DATA
+OffsetGateMsg       equ     GATEMSG    - LABEL_SEG_DATA
 OffsetLDTMessage    equ     LDTMESSAGE - LABEL_SEG_DATA
 LenOfData   equ     $ - LABEL_SEG_DATA
 ; END OF [SECTION .data]
@@ -110,6 +118,16 @@ LABEL_BEGIN:
     shr     eax, 16
     mov     [LABEL_DESC_CODE16 + 4], al
     mov     [LABEL_DESC_CODE16 + 7], ah
+
+    ; code DEST (CALL GATE)
+    xor     eax, eax
+    mov     ax, cs
+    shl     eax, 4
+    add     eax, LABEL_SEG_CODE_DEST
+    mov     [LABEL_DESC_DEST + 2], ax
+    shr     eax, 16
+    mov     [LABEL_DESC_DEST + 4], al
+    mov     [LABEL_DESC_DEST + 7], ah
 
     ; init segment address of LDT
     xor     eax, eax
@@ -300,6 +318,31 @@ LABEL_GO_BACK_TO_REAL:
 LenOfcode16     equ     $ - $$
 ; END OF [SECTION .s16code]
 
+[SECTION .sdest]
+[BITS   32]
+LABEL_SEG_CODE_DEST:
+    push    ax
+    push    ds
+    push    esi
+    push    edi
+
+    mov     ax, SelectorData
+    mov     ds, ax
+    mov     esi, OffsetGateMsg
+    mov     edi, 10*80*2+15*2
+    call    DispStr
+
+    pop     edi
+    pop     esi
+    pop     ds
+    pop     ax
+    retf
+
+LenOfcodeDest       equ     $ - $$
+; END OF [SECTION .sdest]
+
+; ===================== LDT =====================
+
 [SECTION .ldt]
 ALIGN   32
 LABEL_LDT:
@@ -323,6 +366,7 @@ LABEL_CODE_A:
     jmp     SelectorCode16:0
 LenOfCodeA      equ $ - $$
 ; END OF [SECTION .ldt_codea]
+; ================ END OF LDT =================
 
 [SECTION    .sring3]
 ALIGN   32
@@ -334,6 +378,8 @@ LABEL_CODE_RING3:
     mov     ah, 0x02
     mov     al, '3'
     mov     [ds:edi], ax
+
+    call    SelCallGateTest:0
 
     jmp     $
 LenOfcodeRing3      equ     $ -$$

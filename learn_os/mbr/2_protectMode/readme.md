@@ -99,6 +99,10 @@ OK. We make a step as fllow:
 
     * step4: push ss, sp, cs, ip and then retf.
 
+* How back to ring 1 from ring 3?
+
+    Modify the descriptor and selector of GATE. (make CPL, RPL <= DPL_G)
+
 ## Summary
 
 1. What should prepare for LDT/GDT?
