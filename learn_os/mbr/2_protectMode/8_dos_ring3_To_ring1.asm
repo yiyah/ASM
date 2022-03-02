@@ -1,4 +1,4 @@
-; flow: LABEL_BEGIN --> LABEL_SEG_CODE32 --> LABEL_CODE_RING3
+; flow: LABEL_BEGIN --> LABEL_SEG_CODE32 --> LABEL_CODE_RING3 --> LABEL_SEG_CODE_DEST
 
 %include "pm.inc"
     org     0x100

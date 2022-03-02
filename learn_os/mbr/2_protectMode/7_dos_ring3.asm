@@ -1,4 +1,4 @@
-; flow: LABEL_BEGIN --> LABEL_SEG_CODE32 --> LABEL_CODE_A --> LABEL_SEG_CODE16 --> LABEL_REAL_ENTRY
+; flow: LABEL_BEGIN --> LABEL_SEG_CODE32 --> LABEL_CODE_RING3
 
 %include "pm.inc"
     org     0x100
@@ -300,7 +300,9 @@ LABEL_GO_BACK_TO_REAL:
 LenOfcode16     equ     $ - $$
 ; END OF [SECTION .s16code]
 
-[SECTION .ldt]
+; ===================== LDT =====================
+
+[SECTION .sldt]
 ALIGN   32
 LABEL_LDT:
 LABEL_DESC_LDT_CODEA:   Descriptor  0, LenOfCodeA - 1, DA_32 | DA_C
@@ -323,6 +325,7 @@ LABEL_CODE_A:
     jmp     SelectorCode16:0
 LenOfCodeA      equ $ - $$
 ; END OF [SECTION .ldt_codea]
+; ================ END OF LDT =================
 
 [SECTION    .sring3]
 ALIGN   32

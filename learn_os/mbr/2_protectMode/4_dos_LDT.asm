@@ -261,7 +261,7 @@ LABEL_GO_BACK_TO_REAL:
 LenOfcode16     equ     $ - $$
 ; END OF [SECTION .s16code]
 
-[SECTION .ldt]
+[SECTION .sldt]
 ALIGN   32
 LABEL_LDT:
 LABEL_DESC_LDT_CODEA:   Descriptor  0, LenOfCodeA - 1, DA_32 | DA_C
