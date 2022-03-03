@@ -10,6 +10,7 @@ DA_DPL2     EQU       40H
 DA_DPL3     EQU       60H
 
 DA_CGATE    EQU       8CH
+DA_TSS      EQU       89H
 
 SA_TIL      EQU         4   ; selector of LDT
 SA_RPL0     EQU         0
