@@ -174,7 +174,7 @@ LABEL_SEG_CODE32:
     mov     esi,OffsetPMMessage
     mov     edi,3*80*2
     call    ClearScreen
-    call    DispStr
+    call    SelectorCode32:OffsetDispStr
 
     mov     ax, SelectorLDT
     lldt    ax
@@ -214,6 +214,7 @@ Clear_Screen:
 ; param: ds:esi
 ; ===================================
 DispStr:
+OffsetDispStr       equ     $ - LABEL_SEG_CODE32
     push    ax
     push    ecx
     push    es
@@ -236,7 +237,7 @@ Disp_Ret:
     pop     es
     pop     ecx
     pop     ax
-    ret
+    retf
 
 LenOfCode32     equ     $ - LABEL_SEG_CODE32
 ; END OF [SECTION .s32]
@@ -279,7 +280,7 @@ LABEL_CODE_A:
     mov     ds,ax
     mov     esi,OffsetLDTMessage
     mov     edi,5*80*2
-    call    DispStr
+    call    SelectorCode32:OffsetDispStr
 
     jmp     SelectorCode16:0
 LenOfCodeA      equ $ - $$

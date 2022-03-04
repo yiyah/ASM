@@ -131,3 +131,17 @@ OK. We make a step as fllow:
 
    I found that it will occur error wile using es in DOS.
    I don't know why.
+
+2. problem of call
+
+    I have no idea that why I get something wrong while using `call DispStr` at the file 8_dos_ring3_To_ring1.asm.
+
+    In the end I realized how stupid I was.
+
+    Fuck! I am so stupid that I made such a low-level mistake.
+
+    At first, I also think it may need a long call.
+
+    But I forget the function of DispStr is not using retf. So I got mistake also. I didn't know anything about it at that time. Damn it!
+
+    Handsome as I am, fix this problem in commit a42cd78.
