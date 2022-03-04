@@ -272,7 +272,7 @@ LABEL_SEG_CODE32:
     mov     esi,OffsetPMMessage
     mov     edi,3*80*2
     call    ClearScreen
-    call    DispStr
+    call    SelectorCode32:OffsetDispStr
 
     mov     ax, SelectorTSS
     ltr     ax
@@ -322,6 +322,7 @@ Clear_Screen:
 ; param: ds:esi
 ; ===================================
 DispStr:
+OffsetDispStr       equ     $ - LABEL_SEG_CODE32
     push    ax
     push    ecx
     push    es
@@ -344,7 +345,7 @@ Disp_Ret:
     pop     es
     pop     ecx
     pop     ax
-    ret
+    retf
 
 LenOfCode32     equ     $ - LABEL_SEG_CODE32
 ; END OF [SECTION .s32]
@@ -377,18 +378,18 @@ LABEL_SEG_CODE_DEST:
     push    esi
     push    edi
 
-    ;mov     ax, SelectorData
-    ;mov     ds, ax
-    ;mov     esi, OffsetGateMsg
-    ;mov     edi, 10*80*2+15*2
-    ;call    DispStr
+    mov     ax, SelectorData
+    mov     ds, ax
+    mov     esi, OffsetGateMsg
+    mov     edi, 10*80*2+15*2
+    call    SelectorCode32:OffsetDispStr
 
-    mov     ax, SelectorVideo
-    mov     es, ax
-    mov     edi, 9*80*2+15*2
-    mov     al, 'G'
-    mov     ah, 0x02
-    mov     [es:edi], ax
+    ;mov     ax, SelectorVideo
+    ;mov     es, ax
+    ;mov     edi, 7*80*2+15*2
+    ;mov     al, 'G'
+    ;mov     ah, 0x02
+    ;mov     [es:edi], ax
 
     pop     edi
     pop     esi
@@ -419,7 +420,7 @@ LABEL_CODE_A:
     mov     ds,ax
     mov     esi,OffsetLDTMessage
     mov     edi,5*80*2
-    call    DispStr
+    call    SelectorCode32:OffsetDispStr
 
     jmp     SelectorCode16:0
 LenOfCodeA      equ $ - $$
@@ -432,7 +433,7 @@ ALIGN   32
 LABEL_CODE_RING3:
     mov     ax,SelectorVideo
     mov     ds,ax
-    mov     edi, 7*80+5*2
+    mov     edi, 5*80*2+5*2
     mov     ah, 0x02
     mov     al, '3'
     mov     [ds:edi], ax
