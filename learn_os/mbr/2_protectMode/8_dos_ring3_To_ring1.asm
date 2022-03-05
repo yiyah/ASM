@@ -381,7 +381,7 @@ LABEL_SEG_CODE_DEST:
     mov     ax, SelectorData
     mov     ds, ax
     mov     esi, OffsetGateMsg
-    mov     edi, 10*80*2+15*2
+    mov     edi, 7*80*2+15*2
     call    SelectorCode32:OffsetDispStr
 
     ;mov     ax, SelectorVideo
@@ -395,6 +395,10 @@ LABEL_SEG_CODE_DEST:
     pop     esi
     pop     ds
     pop     ax
+
+    mov     ax, SelectorLDT
+    lldt    ax
+    jmp     SelectorCodeA:0
     retf
 
 LenOfcodeDest       equ     $ - $$
@@ -402,7 +406,7 @@ LenOfcodeDest       equ     $ - $$
 
 ; ===================== LDT =====================
 
-[SECTION .ldt]
+[SECTION .sldt]
 ALIGN   32
 LABEL_LDT:
 LABEL_DESC_LDT_CODEA:   Descriptor  0, LenOfCodeA - 1, DA_32 | DA_C
@@ -419,7 +423,7 @@ LABEL_CODE_A:
     mov     ax,SelectorData
     mov     ds,ax
     mov     esi,OffsetLDTMessage
-    mov     edi,5*80*2
+    mov     edi,9*80*2
     call    SelectorCode32:OffsetDispStr
 
     jmp     SelectorCode16:0
