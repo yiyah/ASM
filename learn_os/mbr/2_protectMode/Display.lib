@@ -1,0 +1,60 @@
+; Display.lib
+
+; ===================================
+; Function: Display string which end with 0
+; param: es:edi
+; param: ds:esi
+; ===================================
+DispStr:
+FLAG_LONG_JUMP      equ     0xFE
+    push    ax
+    push    bx
+    xor     bx, bx
+    jmp     _DispStr
+DispStr_Long:
+    push    ax
+    push    bx
+    mov     bx, FLAG_LONG_JUMP
+
+_DispStr:
+    xor     ax, ax
+    mov     al, [ds:esi]
+    cmp     al, 0
+    je      Disp_ret
+    mov     ah, 0x02
+    mov     [es:edi], ax
+    inc     esi
+    add     edi, 2
+    jmp     _DispStr
+Disp_ret:
+    pop     ax
+    cmp     bx, FLAG_LONG_JUMP
+    pop     bx
+    je      Disp_ret_Long
+    ret
+Disp_ret_Long:
+    retf
+
+; ===================================
+; Function: clear screen
+; param: [IN] es
+; ===================================
+ClearScreen:
+    push    eax
+    push    ecx
+    push    edi
+
+    xor     eax,eax
+    xor     ecx,ecx
+    xor     edi,edi
+    mov     cx,25*80        ; total 4000 Bytes
+    mov     ax,0            ; but I use ax so it will div 2
+Clear_Screen:
+    mov     [es:edi],ax
+    add     edi,2
+    loop    Clear_Screen
+
+    pop     edi
+    pop     ecx
+    pop     eax
+    ret
