@@ -36,6 +36,41 @@ Disp_ret_Long:
     retf
 
 ; ===================================
+; Function: Display AL
+; param: es:edi
+; param: ds:esi
+; param: al
+; ===================================
+DispAL:
+    push    ax
+    push    bx
+    push    cx
+
+    mov     cx, 2
+    mov     ah, 0x03
+    mov     al, [ds:esi]
+    mov     bl, al
+    shr     al, 4
+_loop_Disp_AL:
+    and     al, 0xF
+    cmp     al, 0xA
+    jb      _DispNumber     ; is number
+    add     al, 55          ; is character
+    jmp     _Disp_AL
+_DispNumber:
+    add     al, 48
+_Disp_AL:
+    mov     [es:edi], ax    ; show memory
+    mov     al, bl
+    add     edi, 2
+    loop    _loop_Disp_AL
+
+    pop     cx
+    pop     bx
+    pop     ax
+    ret
+
+; ===================================
 ; Function: clear screen
 ; param: [IN] es
 ; ===================================

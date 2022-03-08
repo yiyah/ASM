@@ -40,8 +40,16 @@ TopOfStack      equ     $ - $$ - 1
 ALIGN   32
 LABEL_DATA:
 StackPointerInRealMode    dw      0
+_dwARDSNumber:  dw      0
 PMMESSAGE:      db      'In protect now!', 0
+MEMORYINFO:     times   400     db      0
+ARDSTITLE:      db      'BaseAddrL  BaseAddrH  LengetLow  LengthHigh  Type', 0
+TEST:           db      1,2,3,4,5,0xef,0xF7,0xAB,0xcd,0xfe
+OFFSETTEST      equ     TEST - LABEL_DATA
+OFFSETARDSNUM   equ     _dwARDSNumber - LABEL_DATA
 OFFSETPMMEG     equ     PMMESSAGE - LABEL_DATA
+OFFSETMEMINFO   equ     MEMORYINFO - LABEL_DATA
+OFFSETARDSTITL  equ     ARDSTITLE - LABEL_DATA
 LenOfData       equ     $ - $$
 ; END of [SECTION    .sdata]
 
@@ -49,17 +57,37 @@ LenOfData       equ     $ - $$
 ALIGN   16
 [BITS   16]
 LABEL_BEGIN:
-    mov     dx, cs
-    mov     ss, dx
+    mov     ax, cs
+    mov     ss, ax
     mov     sp, 0x100
-
     ; prepare for back to real mode
-    mov     [LABEL_BACK2REAL+3], dx
+    mov     [LABEL_BACK2REAL+3], ax
     mov     [StackPointerInRealMode], sp
+
+    ; get memory info
+    mov     ebx, 0
+    mov     ax, cs
+    mov     es, ax
+    mov     di, MEMORYINFO
+LABEL_LOOP_GET_MEM:
+    mov     eax, 0xE820
+    mov     ecx, 20
+    mov     edx, 0x534D4150
+    int     0x15
+
+    jc      LABEL_GET_MEM_FAIL
+    add     di, 20
+    inc     dword [_dwARDSNumber]
+    cmp     ebx, 0
+    jne     LABEL_LOOP_GET_MEM
+    jmp     LABEL_GET_MEM_OK
+LABEL_GET_MEM_FAIL:
+    mov     dword [_dwARDSNumber], 0
+LABEL_GET_MEM_OK:
 
     ; init STACK segment address
     xor     eax, eax
-    mov     ax, dx
+    mov     ax, cs
     shl     eax, 4
     add     eax, LABEL_STACK
     mov     [LABEL_DESC_STACK+2], ax
@@ -69,7 +97,7 @@ LABEL_BEGIN:
 
     ; init DATA segment address
     xor     eax, eax
-    mov     ax, dx
+    mov     ax, cs
     shl     eax, 4
     add     eax, LABEL_DATA
     mov     [LABEL_DESC_DATA+2], ax
@@ -79,7 +107,7 @@ LABEL_BEGIN:
 
     ; init code32 segment address
     xor     eax, eax
-    mov     ax, dx
+    mov     ax, cs
     shl     eax, 4
     add     eax, LABEL_SEG_CODE32
     mov     [LABEL_DESC_CODE32+2], ax
@@ -89,7 +117,7 @@ LABEL_BEGIN:
 
     ; init back_to_real code segment address
     xor     eax, eax
-    mov     ax, dx
+    mov     ax, cs
     shl     eax, 4
     add     eax, LABEL_SEG_BackToReal
     mov     [LABEL_DESC_BACK2REAL+2], ax
@@ -99,7 +127,7 @@ LABEL_BEGIN:
 
     ; init the pointer of GDT
     xor     eax, eax
-    mov     ax, dx
+    mov     ax, cs
     shl     eax, 4
     add     eax, LABEL_GDT
     mov     [PTROFGDT+2], eax
@@ -159,7 +187,55 @@ LABEL_SEG_CODE32:
     mov     edi, 1*80*2+5*2
     call    ClearScreen
     call    SelCode32:OffsetDispStr     ; call DispStr
+
+    mov     esi, OFFSETTEST
+    mov     edi, 20*80*2
+
+    mov     cx, 10
+LABEL_TEST:
+    mov     al, [ds:esi]
+    call    DispAL
+    add     edi, 2
+    inc     esi
+    loop    LABEL_TEST
+
+    call    LABEL_DISP_MEM
+
     jmp     SelBack2Real:0
+
+LABEL_DISP_MEM:
+    mov     ax, SelData
+    mov     ds, ax
+    mov     esi, OFFSETARDSTITL
+    mov     ax, SelVideo
+    mov     es, ax
+    mov     edi, 3*2*80+3*2
+    call    DispStr
+
+    mov     esi, OFFSETMEMINFO
+    mov     edi, 5*80*2+3*2
+
+    mov     cx, [ds:OFFSETARDSNUM]
+_NUM_OF_ARDS:
+    push    cx
+    mov     cx, 4
+_ITEM_OF_ARDS:
+    push    cx
+    mov     cx, 4
+_FIELD_OF_ARDS:
+    mov     al, [ds:esi]
+    call    DispAL              ; ds:esi es:edi al
+    inc     esi
+    ;add     edi, 2
+    loop    _FIELD_OF_ARDS      ; Finish displaying a field in an item in ARDS
+    add     edi, 2
+    pop     cx
+    loop    _ITEM_OF_ARDS       ; Finish displaying an item in ARDS
+    add     edi,2*80*2-36*2
+    pop     cx
+    loop    _NUM_OF_ARDS
+
+    ret
 
 %include    "Display.lib"
     OffsetDispStr   equ     DispStr - LABEL_SEG_CODE32
