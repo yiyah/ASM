@@ -65,7 +65,7 @@ LABEL_BEGIN:
     mov     [StackPointerInRealMode], sp
 
     ; get memory info
-    mov     ebx, 0
+    mov     ebx, 0                      ; 0 when first use
     mov     ax, cs
     mov     es, ax
     mov     di, MEMORYINFO
@@ -75,14 +75,15 @@ LABEL_LOOP_GET_MEM:
     mov     edx, 0x534D4150
     int     0x15
 
-    jc      LABEL_GET_MEM_FAIL
-    add     di, 20
+    jc      LABEL_GET_MEM_FAIL          ; error when CF = 1
+    add     di, 20                      ; point to next address to save ARDS
     inc     dword [_dwARDSNumber]
-    cmp     ebx, 0
-    jne     LABEL_LOOP_GET_MEM
+    cmp     ebx, 0                      ; 0 when ARDS is the last one
+    jne     LABEL_LOOP_GET_MEM          ; get next ARDS info
     jmp     LABEL_GET_MEM_OK
 LABEL_GET_MEM_FAIL:
     mov     dword [_dwARDSNumber], 0
+    jmp     $                           ; stop when occur error
 LABEL_GET_MEM_OK:
 
     ; init STACK segment address
@@ -216,13 +217,13 @@ LABEL_DISP_MEM:
     mov     edi, 5*80*2+3*2
 
     mov     cx, [ds:OFFSETARDSNUM]
-_NUM_OF_ARDS:
+_NUM_OF_ARDS:                   ; all ARDS
+    push    cx
+    mov     cx, 5
+_ITEM_OF_ARDS:                  ; an item
     push    cx
     mov     cx, 4
-_ITEM_OF_ARDS:
-    push    cx
-    mov     cx, 4
-_FIELD_OF_ARDS:
+_FIELD_OF_ARDS:                 ; a filed
     mov     al, [ds:esi]
     call    DispAL              ; ds:esi es:edi al
     inc     esi
@@ -231,7 +232,7 @@ _FIELD_OF_ARDS:
     add     edi, 2
     pop     cx
     loop    _ITEM_OF_ARDS       ; Finish displaying an item in ARDS
-    add     edi,2*80*2-36*2
+    add     edi,2*80*2-45*2
     pop     cx
     loop    _NUM_OF_ARDS
 

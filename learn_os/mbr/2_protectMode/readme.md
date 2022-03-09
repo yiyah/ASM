@@ -125,6 +125,12 @@ OK. We make a step as fllow:
 
     ![看不到图片是科学问题](https://raw.githubusercontent.com/yiyah/Picture_Material/master/20220213224852.png)
 
+3. 9_dos_getMemory.asm
+
+    This is value in memory. So the right way to read is little-endian.(4 Bytes)
+
+    ![看不到图片是科学问题](https://raw.githubusercontent.com/yiyah/Picture_Material/master/20220309221843.png)
+
 ## NOTE
 
 1. es and gs
