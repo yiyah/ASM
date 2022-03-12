@@ -275,12 +275,21 @@ _DISP_MEM_SIZE:
 ; Function: SetupPaging
 ; ===================================
 SetupPaging:
-
+    ; calculate how many PDE need to init
+    xor     edx, edx
+    mov     eax, [ds:OFFSETMemorySize]
+    mov     ebx, 0x400000
+    div     ebx         ; result = eax...edx
+    mov     ecx, eax    ; the minimum number of PDE need to init
+    test    edx, edx    ; judge remainder if equal 0
+    jz      _NO_REMAINDER
+    inc     ecx         ; remainder != 0 need to add one more page directory table
+_NO_REMAINDER:
+    push    ecx         ; push for PTE
     ; setup page directory
     mov     ax, SelPageDir
     mov     es, ax
     xor     edi, edi
-    mov     ecx, 1024
     xor     eax, eax
     mov     eax, PAGE_TABLE_BASEADDRES | PG_P | PG_USU | PG_RWW
 _SETUP_PAGE_DIR:
@@ -292,7 +301,10 @@ _SETUP_PAGE_DIR:
     mov     ax, SelPageTable
     mov     es, ax
     xor     edi, edi
-    mov     ecx, 1024 * 1024
+    pop     eax                 ; the number of PDE
+    mov     ebx, 1024           ; the number of PTE in one PDE
+    mul     ebx                 ; calculate how many PTE
+    mov     ecx, eax
     xor     eax, eax
     mov     eax, PG_P | PG_USU | PG_RWW
 _SETUP_PAGE_TABLE:
