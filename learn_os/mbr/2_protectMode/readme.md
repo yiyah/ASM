@@ -18,7 +18,7 @@ step4: Calculate the segment base address of GDT and load GDTR(lgdt)
 
 step5: Close the interruption(cli)
 
-step6: Open the address line A20 and set the flag of protect mode(cr0)
+step6: Open the address line A20(bit 1 in 0x92 port) and set the flag of protect mode(bit 0 in cr0)
 
 step7: Enter protect mode
 
@@ -102,6 +102,24 @@ OK. We make a step as fllow:
 * How back to ring 1 from ring 3?
 
     Modify the descriptor and selector of GATE. (make CPL, RPL <= DPL_G)
+
+## Page mechanism
+
+1. Let's make clear that how to start using page mechanism.
+
+    * First, we should let **cr3**(also name PDBR, Page-Directory Base Regester) point to the base address of **page directory table**.
+
+    * Secondly, set the flag of PG in **cr0**(bit 31).
+
+2. How to use page mechanism? And prepare what?
+
+    * step1: Determines the address of the page directory table and page table.
+
+    * step2: Add descriptor, selector of page directory table and page table. (Because we need to fill them in protect mode)
+
+    * step3: Initialize the PDE and PTE. (page directory/table entry)
+
+    * step4: Load base address of PDE to cr3 and set PG flag.
 
 ## Summary
 

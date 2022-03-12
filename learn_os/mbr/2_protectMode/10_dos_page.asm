@@ -3,7 +3,10 @@
 %include "pm.inc"
 
 org     0x100
-jmp     LABEL_BEGIN
+    jmp     LABEL_BEGIN
+
+PAGE_DIR_BASEADDRES       equ 0x200000
+PAGE_TABLE_BASEADDRES     equ 0x201000
 
 [SECTION    .sgdt]
 ALIGN   32
@@ -15,6 +18,8 @@ LABEL_DESC_STACK:       Descriptor       0,       TopOfStack, DA_DRWA
 LABEL_DESC_DATA:        Descriptor       0,    LenOfData - 1, DA_DRW
 LABEL_DESC_CODE32:      Descriptor       0,  LenOfCode32 - 1, DA_32 | DA_C
 LABEL_DESC_BACK2REAL:   Descriptor       0,           0xFFFF, DA_C
+LABEL_DESC_PAGEDIR:     Descriptor PAGE_DIR_BASEADDRES, 4095, DA_DRW
+LABEL_DESC_PAGETABLE:   Descriptor PAGE_TABLE_BASEADDRES,1023,DA_DRW | DA_LIMIT_4K
 
 LenOfGDT    equ     $ - LABEL_GDT
 PTROFGDT    dw      LenOfGDT - 1
@@ -26,6 +31,8 @@ SelStack        equ     LABEL_DESC_STACK    -   LABEL_GDT
 SelData         equ     LABEL_DESC_DATA     -   LABEL_GDT
 SelCode32       equ     LABEL_DESC_CODE32   -   LABEL_GDT
 SelBack2Real    equ     LABEL_DESC_BACK2REAL-   LABEL_GDT
+SelPageDir      equ     LABEL_DESC_PAGEDIR  -   LABEL_GDT
+SelPageTable    equ     LABEL_DESC_PAGETABLE-   LABEL_GDT
 
 ; END of [SECTION    .sgdt]
 [SECTION    .sstackCode32]
@@ -171,6 +178,8 @@ LenOfCode16     equ     $ - $$
 ALIGN   32
 [BITS   32]
 LABEL_SEG_CODE32:
+    call    SetupPaging
+
     mov     ax, SelNormal
     mov     ds, ax
     mov     es, ax
@@ -189,9 +198,9 @@ LABEL_SEG_CODE32:
     call    ClearScreen
     call    SelCode32:OffsetDispStr     ; call DispStr
 
+    ; test: DisplayAL
     mov     esi, OFFSETTEST
     mov     edi, 20*80*2
-
     mov     cx, 10
 LABEL_TEST:
     mov     al, [ds:esi]
@@ -200,10 +209,14 @@ LABEL_TEST:
     inc     esi
     loop    LABEL_TEST
 
+    ; display memory info
     call    LABEL_DISP_MEM
 
     jmp     SelBack2Real:0
 
+; ===================================
+; Function: Display memory
+; ===================================
 LABEL_DISP_MEM:
     mov     ax, SelData
     mov     ds, ax
@@ -238,6 +251,43 @@ _FIELD_OF_ARDS:                 ; a filed
 
     ret
 
+; ===================================
+; Function: SetupPaging
+; ===================================
+SetupPaging:
+
+    ; setup page directory
+    mov     ax, SelPageDir
+    mov     es, ax
+    xor     edi, edi
+    mov     ecx, 1024
+    xor     eax, eax
+    mov     eax, PAGE_TABLE_BASEADDRES | PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_DIR:
+    stosd
+    add     eax, 4096           ; base address of next PTE
+    loop    _SETUP_PAGE_DIR
+
+    ; setup page table
+    mov     ax, SelPageTable
+    mov     es, ax
+    xor     edi, edi
+    mov     ecx, 1024 * 1024
+    xor     eax, eax
+    mov     eax, PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_TABLE:
+    stosd
+    add     eax, 4096
+    loop    _SETUP_PAGE_TABLE
+
+    mov     eax, PAGE_DIR_BASEADDRES
+    mov     cr3, eax
+    mov     eax, cr0
+    or      eax, 0x80000000
+    mov     cr0, eax
+
+    ret
+
 %include    "Display.lib"
     OffsetDispStr   equ     DispStr - LABEL_SEG_CODE32
 
@@ -256,7 +306,7 @@ LABEL_SEG_BackToReal:
     mov     ss, ax
 
     mov     eax, cr0
-    and     al, 11111110B
+    and     eax, 0x7FFFFFFE     ; PE(bit 0) = 0; PG(bit 31) = 0
     mov     cr0, eax
 
 LABEL_BACK2REAL:
