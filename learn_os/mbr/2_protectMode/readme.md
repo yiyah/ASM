@@ -149,6 +149,18 @@ OK. We make a step as fllow:
 
     ![看不到图片是科学问题](https://raw.githubusercontent.com/yiyah/Picture_Material/master/20220309221843.png)
 
+4. 11_dos_page_less.asm
+
+    It is similar as 10_dos_page.asm.
+
+    ![看不到图片是科学问题](https://raw.githubusercontent.com/yiyah/Picture_Material/master/20220313000144.png)
+
+    What are different form them?
+
+    We can see that the page_less only have 8 PDE. (The base address of Page Directory Table is 0x200000)
+
+    ![看不到图片是科学问题](https://raw.githubusercontent.com/yiyah/Picture_Material/master/20220313000733.png)
+
 ## NOTE
 
 1. es and gs

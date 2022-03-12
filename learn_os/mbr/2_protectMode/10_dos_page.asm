@@ -178,8 +178,6 @@ LenOfCode16     equ     $ - $$
 ALIGN   32
 [BITS   32]
 LABEL_SEG_CODE32:
-    call    SetupPaging
-
     mov     ax, SelNormal
     mov     ds, ax
     mov     es, ax
@@ -211,6 +209,7 @@ LABEL_TEST:
 
     ; display memory info
     call    LABEL_DISP_MEM
+    call    SetupPaging
 
     jmp     SelBack2Real:0
 

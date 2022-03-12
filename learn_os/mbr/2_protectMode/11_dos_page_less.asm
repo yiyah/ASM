@@ -48,7 +48,7 @@ ALIGN   32
 LABEL_DATA:
 StackPointerInRealMode    dw      0
 _dwARDSNumber:  dw      0
-MemorySize      dw      0           ; can record size: 0xFFFF FFFF = 4G
+MemorySize      dd      0           ; can record size: 0xFFFF FFFF = 4G
 PMMESSAGE:      db      'In protect now!', 0
 MEMORYINFO:     times   400     db      0
 ARDSTITLE:      db      'BaseAddrL  BaseAddrH  LengetLow  LengthHigh  Type', 0
@@ -180,8 +180,6 @@ LenOfCode16     equ     $ - $$
 ALIGN   32
 [BITS   32]
 LABEL_SEG_CODE32:
-    call    SetupPaging
-
     mov     ax, SelNormal
     mov     ds, ax
     mov     es, ax
@@ -200,7 +198,15 @@ LABEL_SEG_CODE32:
     call    ClearScreen
     call    SelCode32:OffsetDispStr     ; call DispStr
 
+    ; display memory info
+    call    LABEL_DISP_MEM
+    call    SetupPaging
+
     ; test: DisplayAL
+    mov     ax, SelData
+    mov     ds, ax
+    mov     ax, SelVideo
+    mov     es, ax
     mov     esi, OFFSETTEST
     mov     edi, 20*80*2
     mov     cx, 10
@@ -211,8 +217,6 @@ LABEL_TEST:
     inc     esi
     loop    LABEL_TEST
 
-    ; display memory info
-    call    LABEL_DISP_MEM
 
     jmp     SelBack2Real:0
 
