@@ -48,12 +48,14 @@ ALIGN   32
 LABEL_DATA:
 StackPointerInRealMode    dw      0
 _dwARDSNumber:  dw      0
+MemorySize      dw      0           ; can record size: 0xFFFF FFFF = 4G
 PMMESSAGE:      db      'In protect now!', 0
 MEMORYINFO:     times   400     db      0
 ARDSTITLE:      db      'BaseAddrL  BaseAddrH  LengetLow  LengthHigh  Type', 0
 TEST:           db      1,2,3,4,5,0xef,0xF7,0xAB,0xcd,0xfe
 OFFSETTEST      equ     TEST - LABEL_DATA
 OFFSETARDSNUM   equ     _dwARDSNumber - LABEL_DATA
+OFFSETMemorySize equ    MemorySize - LABEL_DATA
 OFFSETPMMEG     equ     PMMESSAGE - LABEL_DATA
 OFFSETMEMINFO   equ     MEMORYINFO - LABEL_DATA
 OFFSETARDSTITL  equ     ARDSTITLE - LABEL_DATA
@@ -245,9 +247,27 @@ _FIELD_OF_ARDS:                 ; a filed
     add     edi, 2
     pop     cx
     loop    _ITEM_OF_ARDS       ; Finish displaying an item in ARDS
+    ; judge whether the memory is used by OS
+    mov     eax, [ds:esi-4]
+    cmp     eax, 1
+    jne     _RESERVE_FOR_OS
+    mov     eax, [ds:esi-20]    ; memory szie = base + length
+    add     eax, [ds:esi-12]
+    mov     [ds:OFFSETMemorySize], eax  ; save
+_RESERVE_FOR_OS:
     add     edi,2*80*2-45*2
     pop     cx
     loop    _NUM_OF_ARDS
+
+    ; disp memory size
+    mov     cx, 4
+    mov     esi, OFFSETMemorySize+3
+_DISP_MEM_SIZE:
+    mov     al, [ds:esi]
+    call    DispAL
+    ;add     edi, 2
+    sub     esi, 1
+    loop    _DISP_MEM_SIZE
 
     ret
 
