@@ -3,8 +3,20 @@
 org     0x100
     jmp     LABEL_BEGIN
 
-PAGE_DIR_BASEADDRES       equ 0x200000
-PAGE_TABLE_BASEADDRES     equ 0x201000
+; Now we know the momory size is 32M (note that one address in PTE is 4K Bytes)
+; Minimal PDE number is 32M/(4K*1K)=8
+PAGE_DIR_BASEADDRES1       equ 0x200000     ; 2M
+; Minimal PTE number is 32M/4K=8K
+PAGE_TABLE_BASEADDRES1     equ 0x201000     ; 2M + 4K
+
+; The privious PTE size is 8K*4=32K Bytes
+PAGE_DIR_BASEADDRES2       equ 0x210000     ; 2M + 64K
+PAGE_TABLE_BASEADDRES2     equ 0x211000     ; 2M + 64K + 4K
+
+PagingDemo  equ     0x301000
+LinearAddr  equ     0x401000
+ProcFoo     equ     0x401000
+ProcBar     equ     0x501000
 
 [SECTION    .sgdt]
 ALIGN   32
@@ -14,10 +26,10 @@ LABEL_DESC_NORMAL:      Descriptor       0,           0xFFFF, DA_DRW
 LABEL_DESC_VIDEO:       Descriptor 0xB8000,             4000, DA_DRW
 LABEL_DESC_STACK:       Descriptor       0,       TopOfStack, DA_DRWA
 LABEL_DESC_DATA:        Descriptor       0,    LenOfData - 1, DA_DRW
-LABEL_DESC_CODE32:      Descriptor       0,  LenOfCode32 - 1, DA_32 | DA_C
+LABEL_DESC_CODE32:      Descriptor       0,  LenOfCode32 - 1, DA_32 | DA_CR
 LABEL_DESC_BACK2REAL:   Descriptor       0,           0xFFFF, DA_C
-LABEL_DESC_PAGEDIR:     Descriptor PAGE_DIR_BASEADDRES, 4095, DA_DRW
-LABEL_DESC_PAGETABLE:   Descriptor PAGE_TABLE_BASEADDRES,1023,DA_DRW | DA_LIMIT_4K
+LABEL_DESC_FLATC:       Descriptor       0,          0xFFFFF, DA_CR|DA_32|DA_LIMIT_4K
+LABEL_DESC_FLATCRW:     Descriptor       0,          0xFFFFF, DA_DRW|DA_LIMIT_4K
 
 LenOfGDT    equ     $ - LABEL_GDT
 PTROFGDT    dw      LenOfGDT - 1
@@ -29,8 +41,8 @@ SelStack        equ     LABEL_DESC_STACK    -   LABEL_GDT
 SelData         equ     LABEL_DESC_DATA     -   LABEL_GDT
 SelCode32       equ     LABEL_DESC_CODE32   -   LABEL_GDT
 SelBack2Real    equ     LABEL_DESC_BACK2REAL-   LABEL_GDT
-SelPageDir      equ     LABEL_DESC_PAGEDIR  -   LABEL_GDT
-SelPageTable    equ     LABEL_DESC_PAGETABLE-   LABEL_GDT
+SelFlatC        equ     LABEL_DESC_FLATC    -   LABEL_GDT
+SelFlatCRW      equ     LABEL_DESC_FLATCRW  -   LABEL_GDT
 
 ; END of [SECTION    .sgdt]
 [SECTION    .sstackCode32]
@@ -46,7 +58,8 @@ ALIGN   32
 LABEL_DATA:
 StackPointerInRealMode    dw      0
 _dwARDSNumber:  dw      0
-MemorySize:     dw      0
+MemorySize:     dd      0
+MinimalPDE:     dw      0
 PMMESSAGE:      db      'In protect now!', 0
 MEMORYINFO:     times   400     db      0
 ARDSTITLE:      db      'BaseAddrL  BaseAddrH  LengetLow  LengthHigh  Type', 0
@@ -54,6 +67,7 @@ TEST:           db      1,2,3,4,5,0xef,0xF7,0xAB,0xcd,0xfe
 OFFSETTEST      equ     TEST - LABEL_DATA
 OFFSETARDSNUM   equ     _dwARDSNumber - LABEL_DATA
 OFFSETMemorySize  equ   MemorySize - LABEL_DATA
+OFFSETMinPDE    equ     MinimalPDE - LABEL_DATA
 OFFSETPMMEG     equ     PMMESSAGE - LABEL_DATA
 OFFSETMEMINFO   equ     MEMORYINFO - LABEL_DATA
 OFFSETARDSTITL  equ     ARDSTITLE - LABEL_DATA
@@ -199,9 +213,30 @@ LABEL_SEG_CODE32:
     ; display memory info
     call    LABEL_DISP_MEM
     call    LABEL_GET_MEM_SIZE
+
+    ; get minimal PDE
+    push    dword [ds:OFFSETMemorySize]
+    call    GET_MINI_PDE
+    add     esp, 4                      ; del temp variable
+    mov     [ds:OFFSETMinPDE], ax
+    mov     [ds:OFFSETTEST], ax
+    ; display memory size
     call    LABEL_DISP_MEM_SIZE
     call    LABEL_TEST_DISPAL
 
+    call    LABEL_SET_ENVIRONMENT
+
+    push    word [ds:OFFSETMinPDE]
+    call    SetupPagingLess
+    add     esp, 2
+
+    call    SelFlatC:PagingDemo
+
+    push    word [ds:OFFSETMinPDE]
+    call    PageSwitch         ; TODO
+    add     esp, 2
+
+    call    SelFlatC:PagingDemo
 
     jmp     SelBack2Real:0
 
@@ -241,9 +276,40 @@ _RESERVE_FOR_OS:
     ret
 
 ; ===================================
+; @Function: eax = GET_MINI_PDE(dw MemorySize)
+; @Brief: Calculate the minimal PDE with memory size
+; @param: [IN] push: MemorySize
+; @param: [OUT] eax: minimal number of PDE
+; ===================================
+GET_MINI_PDE:
+    push    ebp
+    mov     ebp, esp
+    push    ebx
+    push    edx
+
+    mov     eax, [ebp+8]   ; memory size
+
+    ; calculate how many PDE need to init
+    xor     edx, edx
+    mov     ebx, 0x400000
+    div     ebx         ; result = eax...edx
+    test    edx, edx    ; judge remainder if equal 0
+    jz      _NO_REMAINDER_LESS  ; jump if equal 0
+    inc     eax         ; remainder != 0 need to add one more page directory table
+_NO_REMAINDER_LESS:
+    nop
+    ; will return eax
+    pop     edx
+    pop     ebx
+    mov     esp, ebp
+    pop     ebp
+    ret
+
+; ===================================
 ; Function: Display memory size
 ; ===================================
 LABEL_DISP_MEM_SIZE:
+    push    ds
     push    ecx
     mov     ax, SelData
     mov     ds, ax
@@ -256,6 +322,7 @@ _DISP_MEM_SIZE:
     dec     esi
     loop    _DISP_MEM_SIZE
     pop     ecx
+    pop     ds
     ret
 
 ; ===================================
@@ -330,40 +397,178 @@ _TEST_DISPAL:
     ret
 
 ; ===================================
-; Function: SetupPaging
+; @Function: Set environment
+; @Brief: This function will copy relating code to 
+;         0x301000, 0x401000 and 0x501000
 ; ===================================
-SetupPaging:
-
-    ; setup page directory
-    mov     ax, SelPageDir
+LABEL_SET_ENVIRONMENT:
+    push    ds
+    mov     ax, cs              ; note that the running code must be readed
+    mov     ds, ax
+    mov     ax, SelFlatCRW
     mov     es, ax
-    xor     edi, edi
-    mov     ecx, 1024
-    xor     eax, eax
-    mov     eax, PAGE_TABLE_BASEADDRES | PG_P | PG_USU | PG_RWW
-_SETUP_PAGE_DIR:
-    stosd
+
+    push    LenOfFoo
+    push    OffsetFoo
+    push    ProcFoo             ; 0x401000
+    call    MemCpy
+    add     esp, 12
+
+    push    LenOfBar
+    push    OffsetBar
+    push    ProcBar             ; 0x501000
+    call    MemCpy
+    add     esp, 12
+
+    push    LenOfLinearDemo
+    push    OffsetLinearDemo
+    push    PagingDemo          ; 0x301000
+    call    MemCpy
+    add     esp, 12
+    pop     ds
+    ret
+
+LABEL_LINEAR_DEMO:
+OffsetLinearDemo    equ     $ - $$
+    mov     eax, LinearAddr     ; 0x401000
+    call    eax
+    retf
+LenOfLinearDemo     equ     $ - LABEL_LINEAR_DEMO
+
+LABEL_FOO:
+OffsetFoo   equ     $ - $$
+    mov     ax, SelVideo
+    mov     es, ax
+    mov     ah, 0x04
+    mov     al, 'f'
+    mov     [es:22*80*2+3*2], ax
+    mov     al, 'o'
+    mov     [es:22*80*2+4*2], ax
+    mov     al, 'o'
+    mov     [es:22*80*2+5*2], ax
+
+    ret
+LenOfFoo    equ     $ - LABEL_FOO
+
+LABEL_BAR:
+OffsetBar   equ     $ - $$
+    mov     ax, SelVideo
+    mov     es, ax
+    mov     ah, 0x04
+    mov     al, 'B'
+    mov     [es:23*80*2+3*2], ax
+    mov     al, 'a'
+    mov     [es:23*80*2+4*2], ax
+    mov     al, 'r'
+    mov     [es:23*80*2+5*2], ax
+
+    ret
+LenOfBar    equ     $ - LABEL_BAR
+
+; ===================================
+; @Function: SetupPagingLess(dw NumOfPDE)
+; @Brief: Setup paging according to number of PDE.
+;         This will consume minimal memory.
+; @param: [IN] NumOfPDE   push NumOfPDE
+; ===================================
+SetupPagingLess:
+    push    ebp
+    mov     ebp, esp
+    push    ecx
+
+    xor     ecx, ecx
+    mov     cx, [ebp+8]         ; Num of PDE, size is word
+    ; setup page directory
+    mov     ax, SelFlatCRW
+    mov     es, ax
+    mov     edi, PAGE_DIR_BASEADDRES1
+    mov     eax, PAGE_TABLE_BASEADDRES1 | PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_DIR_LESS:
+    stosd                       ; eax --> [es:edi]
     add     eax, 4096           ; base address of next PTE
-    loop    _SETUP_PAGE_DIR
+    loop    _SETUP_PAGE_DIR_LESS
 
     ; setup page table
-    mov     ax, SelPageTable
-    mov     es, ax
-    xor     edi, edi
-    mov     ecx, 1024 * 1024
+    mov     edi, PAGE_TABLE_BASEADDRES1
     xor     eax, eax
+    mov     ax, [ebp+8]         ; the number of PDE
+    mov     ebx, 1024           ; the number of PTE in one PDE
+    mul     ebx                 ; calculate how many PTE
+    mov     ecx, eax
     mov     eax, PG_P | PG_USU | PG_RWW
-_SETUP_PAGE_TABLE:
+_SETUP_PAGE_TABLE_LESS:
     stosd
     add     eax, 4096
-    loop    _SETUP_PAGE_TABLE
+    loop    _SETUP_PAGE_TABLE_LESS
 
-    mov     eax, PAGE_DIR_BASEADDRES
+    mov     eax, PAGE_DIR_BASEADDRES1
     mov     cr3, eax
     mov     eax, cr0
     or      eax, 0x80000000
     mov     cr0, eax
 
+    pop     ecx
+    mov     esp, ebp
+    pop     ebp
+    ret
+
+; ===================================
+; @Function: PageSwitch(dw NumOfPDE)
+; @Brief:
+; ===================================
+PageSwitch:
+    push    ebp
+    mov     ebp, esp
+    push    ecx
+
+    xor     ecx, ecx
+    mov     cx, [ebp+8]         ; Num of PDE, size is word
+    ; setup page directory
+    mov     ax, SelFlatCRW
+    mov     es, ax
+    mov     edi, PAGE_DIR_BASEADDRES2
+    mov     eax, PAGE_TABLE_BASEADDRES2 | PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_DIR_LESS_PSWITCH:
+    stosd                       ; eax --> [es:edi]
+    add     eax, 4096           ; base address of next PTE
+    loop    _SETUP_PAGE_DIR_LESS_PSWITCH
+
+    ; setup page table
+    mov     edi, PAGE_TABLE_BASEADDRES2
+    xor     eax, eax
+    mov     ax, [ebp+8]         ; the number of PDE
+    mov     ebx, 1024           ; the number of PTE in one PDE
+    mul     ebx                 ; calculate how many PTE
+    mov     ecx, eax
+    mov     eax, PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_TABLE_LESS_PSWITCH:
+    stosd
+    add     eax, 4096
+    loop    _SETUP_PAGE_TABLE_LESS_PSWITCH
+
+    ; The above code is likely SetupPagingLess
+    ; remaping the PTE which point to 0x401000
+    mov     eax, LinearAddr     ; the linear address
+    shr     eax, 22             ; get PDE which used
+    mov     ebx, 4096
+    mul     ebx                 ; get offset of PDE address
+    mov     ecx, eax
+    
+    mov     eax, LinearAddr
+    shr     eax, 12
+    and     eax, 0x3FF          ; get PTE which used
+    mov     ebx, 4
+    mul     ebx                 ; get offset of PTE in PDE
+    add     eax, ecx
+    add     eax, PAGE_TABLE_BASEADDRES2
+    mov     dword [es:eax], ProcBar | PG_P | PG_USU | PG_RWW
+
+    mov     eax, PAGE_DIR_BASEADDRES2
+    mov     cr3, eax
+
+    pop     ecx
+    mov     esp, ebp
+    pop     ebp
     ret
 
 %include    "lib.inc"

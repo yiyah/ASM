@@ -1,5 +1,6 @@
 DA_32       EQU     4000H   ; 32 bit seg
 DA_C        EQU       98H   ; code seg which can run
+DA_CR       EQU       9AH   ; code seg which can run and read
 DA_DRW      EQU       92H   ; R/W data seg
 DA_DRWA     EQU       93H
 DA_LDT      EQU       82H   ; LDT

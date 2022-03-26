@@ -92,3 +92,49 @@ Clear_Screen:
     pop     ecx
     pop     eax
     ret
+
+; ===================================
+; @Function: void *memcpy(void *dest, const void *src, size_t n);
+; @param: [IN]  es: dest
+;         [IN]  edi:    push edi
+; @param: [IN]  ds: src
+;         [IN]  esi     push esi
+; @param: [IN]  n:      push n
+; @param: [out] eax:    dest
+; @usage:   push    n
+;           push    src
+;           push    dest
+;           call    MemCpy
+;        Note that init ds and es.
+; ===================================
+MemCpy:
+    push    ebp
+    mov     ebp, esp
+    push    ecx
+    push    esi
+    push    edi
+
+    mov     ecx, [ebp+16]       ; n
+    mov     esi, [ebp+12]       ; src
+    mov     edi, [ebp+8]        ; dest
+
+    cmp     ecx, 0
+    jz      _MemCpyRet
+
+    cld         ; DF = 0
+_Mem_Cpy:
+    lodsb       ; [ds:esi] --> al and inc esi
+    stosb       ; al --> [es:edi] and inc edi
+    loop    _Mem_Cpy
+    ; rep movsb ; can do above description
+
+    mov     eax, [ebp+8]        ; return value
+
+_MemCpyRet:
+    nop
+    pop     edi
+    pop     esi
+    pop     ecx
+    mov     esp, ebp
+    pop     ebp
+    ret

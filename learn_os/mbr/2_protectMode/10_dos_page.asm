@@ -5,8 +5,10 @@
 org     0x100
     jmp     LABEL_BEGIN
 
-PAGE_DIR_BASEADDRES       equ 0x200000
-PAGE_TABLE_BASEADDRES     equ 0x201000
+; All PDE number is 1K
+PAGE_DIR_BASEADDRES       equ 0x200000     ; 2M
+; All PTE number is 1K*1K=1M
+PAGE_TABLE_BASEADDRES     equ 0x201000     ; 2M + 4K
 
 [SECTION    .sgdt]
 ALIGN   32

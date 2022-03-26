@@ -19,7 +19,7 @@ LABEL_DESC_DATA:        Descriptor       0,    LenOfData - 1, DA_DRW
 LABEL_DESC_CODE32:      Descriptor       0,  LenOfCode32 - 1, DA_32 | DA_C
 LABEL_DESC_BACK2REAL:   Descriptor       0,           0xFFFF, DA_C
 LABEL_DESC_PAGEDIR:     Descriptor PAGE_DIR_BASEADDRES, 4095, DA_DRW
-LABEL_DESC_PAGETABLE:   Descriptor PAGE_TABLE_BASEADDRES,1023,DA_DRW | DA_LIMIT_4K
+LABEL_DESC_PAGETABLE:   Descriptor PAGE_TABLE_BASEADDRES,4096*8-1,DA_DRW
 
 LenOfGDT    equ     $ - LABEL_GDT
 PTROFGDT    dw      LenOfGDT - 1

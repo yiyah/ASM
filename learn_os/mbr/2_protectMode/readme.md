@@ -121,6 +121,56 @@ OK. We make a step as fllow:
 
     * step4: Load base address of PDE to cr3 and set PG flag.
 
+3. How to benefit from paging?
+
+    Now we can use page mechanism and make linear addresses and physical addresses correspond one-to-one. But it has not changed much, it's similar to previous program.
+
+    Now we show a way to get benefit from it!
+
+    Let us look the following code. What can you find?
+
+    ```asm
+    call    SelFlatC:ProcPagingDemo
+    call    PageSwitch
+    call    SelFlatC:ProcPagingDemo
+    ```
+
+    If we don't know anything about paging. We would think the program call the same function and their result is no difference. But unexpectedly, they are difference from each other.
+
+    * Let's think about it. (12_dos_benefit_from_page.asm)
+
+        `ProcPagingDemo` is an address 0x301000. It call another address 0x401000 here.
+
+        Now we have `function_1` in 0x401000 and `function_2` in 0x501000. The `ProcPagingDemo` will call `function_1` at first, because linear address 0x401000 is correspond to phycical address 0x401000.
+
+        But now we map the linear address 0x401000 to physical address 0x501000 by `PageSwitch`. Then, the `ProcPagingDemo` will call `function_2`.
+
+    * How to coding?
+
+        * step1: Add `ProcPagingDemo`, `function_1` and `function_2` in respectively address.
+
+        * step2: Setup paging. First map the linear address to the same physical address. (This step is easy, just like usual.)
+
+        * step3: **The key step.** Except setup paging as usual, we should map linear address 0x401000 to physical address 0x501000. How to do that?
+
+            Think about how linear address translate to physical address. The bit_22 to bit_31 are used to determine which **PDE**. The bit_12 to bit_21 are used to determine which **PTE**. The bit_0 to bit_11 are used to add with physical page top address.
+
+            * So we can find PDE by using `shr linear_addr, 22`
+
+            * find PTE by using
+
+                ```asm
+                mov     eax, linear_addr
+                shr     eax, 12
+                and     eax, 0x3FF      ;0x3FF is use 10 bits to clear other bits
+                ```
+
+            We should make clear that we just know which PDE and PTE to use. But we have no idea where they save. Let's go on considering how to find PDE. Ohh, got it! The cr3 is point to the base address of page directory table.
+
+            So we should find PDE base on the first PDE address.
+
+            And now we know which PDE and PTE used, we should calculate their physical address. Note that the PDE interval is 4K Bytes and the PTE interval is 4 Bytes.
+
 ## Summary
 
 1. What should prepare for LDT/GDT?
