@@ -233,7 +233,7 @@ LABEL_SEG_CODE32:
     call    SelFlatC:PagingDemo
 
     push    word [ds:OFFSETMinPDE]
-    call    PageSwitch         ; TODO
+    call    PageSwitch
     add     esp, 2
 
     call    SelFlatC:PagingDemo
@@ -514,7 +514,8 @@ _SETUP_PAGE_TABLE_LESS:
 
 ; ===================================
 ; @Function: PageSwitch(dw NumOfPDE)
-; @Brief:
+; @Brief: Remapping the linear address(0x401000) to ProcBar(0x501000).
+; @param: [IN] NumOfPDE   push NumOfPDE
 ; ===================================
 PageSwitch:
     push    ebp
