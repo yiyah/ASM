@@ -15,6 +15,16 @@ step2: `dd if=boot.bin of=mbr.img bs=512 count=1 conv=notrunc`  // need generate
 
 step3: then configure Bochs and run `bochs -f bochsrc`
 
+others:
+
+```shell
+mount -o xx.img /mnt/floppy
+cp xxx.com /mnt/floppy
+umount /mnt/floppy
+
+xxd -u -a -g 1 -s +0x2600 -l 512 xxx.img
+```
+
 ## Note
 
 1. 0xAA55
