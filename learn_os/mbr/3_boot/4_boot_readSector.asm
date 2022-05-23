@@ -30,32 +30,9 @@ LABEL_BOOT:
     mov     ds,ax
     mov     si,Bootmessage
     xor     di,di
-    call    Disp_Str
+    call    ClearScreen
+    call    DispStr
     jmp     $               ; stop here when display is finish
-
-; Call this function when di, ds:[si] is ready
-; The string must end of 0x00
-Disp_Str:
-    push    es
-    push    ax
-    push    cx
-    mov     ax,0xB800
-    mov     es,ax           ; set the data destination
-    xor     cx,cx           ; reset cx for loop
-DispStr:
-    xor     cx,cx
-    mov     cl,[ds:si]
-    jcxz    Disp_ret        ; finish display when the data is 0x00
-    mov     ch,0x02         ; set color
-    mov     [es:di],cx
-    inc     si              ; the next index of what to show
-    add     di,2            ; the next index of where to show
-    jmp     DispStr
-Disp_ret:
-    pop     cx
-    pop     ax
-    pop     es
-    ret
 
 ; ===================================
 ; @Function: ReadSector(dw startSector,db num)
@@ -104,6 +81,64 @@ _GoOnReading:
     mov     sp, bp
     pop	    bp
 
+    ret
+
+; ===================================
+; @Function: Disp_Str(ds:si, di)
+; @Brief: Display string which end with 0
+; @param: [IN] ds:si data from where
+; @param: [IN] di data go where
+; @usage:   mov   ax, cs
+;           mov   cs, ds
+;           mov   si, STRING
+;           mov   di, 10*80*2
+;           call  Disp_Str
+; ===================================
+DispStr:
+    push    es
+    push    ax
+    push    cx
+    mov     ax,0xB800
+    mov     es,ax           ; set the data destination
+    xor     cx,cx           ; reset cx for loop
+_Disp_Str:
+    xor     cx,cx
+    mov     cl,[ds:si]
+    jcxz    _Disp_ret       ; finish display when the data is 0x00
+    mov     ch,0x02         ; set color
+    mov     [es:di],cx
+    inc     si              ; the next index of what to show
+    add     di,2            ; the next index of where to show
+    jmp     _Disp_Str
+_Disp_ret:
+    pop     cx
+    pop     ax
+    pop     es
+    ret
+
+; ===================================
+; Function: clear screen
+; ===================================
+ClearScreen:
+    push    ax
+    push    cx
+    push    di
+    push    es
+
+    mov     ax, 0xB800
+    mov     es, ax
+    mov     cx,25*80        ; total 4000 Bytes
+    mov     ax,0            ; but I use ax so it will div 2
+    xor     di,di
+Clear_Screen:
+    mov     [es:di],ax
+    add     di,2
+    loop    Clear_Screen
+
+    pop     es
+    pop     di
+    pop     cx
+    pop     ax
     ret
 
 times   510-($-$$) db 0
