@@ -1,6 +1,6 @@
 .PHONY:all
 
-all:mount_file 3 4 dd_4 umount_file
+all:mount_file 3 4 dd_4 5 umount_file
 
 mount_file:
 	mount -o loop ../b.img /mnt/floppy
@@ -17,8 +17,14 @@ mount_file:
 	cp 4.com /mnt/floppy
 	umount /mnt/floppy
 
+5:
+	nasm 5_find_loader.asm -o 5.bin
+
 dd_4:
 	dd if=4.bin of=../b.img bs=512 count=1 conv=notrunc
+
+dd_5:
+	dd if=5.bin of=../b.img bs=512 count=1 conv=notrunc
 
 umount_file:
 	umount /mnt/floppy

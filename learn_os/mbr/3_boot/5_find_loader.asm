@@ -23,20 +23,166 @@ nop
 	BS_VolLab	    DB 'OrangeS0_02'; 卷标, 必须 11 个字节
 	BS_FileSysType	DB 'FAT12   '	; 文件系统类型, 必须 8个字节  
 
-Bootmessage:    db 'Hello world!',0
+Bootmessage:        db      'Hello world!', 0
+FoundLoaderMsg:     db      'Found loader!', 0
+NoLoaderMsg:        db      'NO loader', 0
+IndexOfRootDir:     db      19
+LoaderName:         db      'loader.bin',0   ; length <= 8 (not include ".bin")
+LENOFLOADERNAME     equ     ($ - LoaderName - 1)
+BASEOFSTACK         equ     0x7C00
+BASEOFLOADER        equ     0x9000
+OFFSETLOADER        equ     0x0
 
 LABEL_BOOT:
-    mov     ax,cs
-    mov     ds,ax
+    mov     ax, cs
+    mov     ds, ax
+    mov     es, ax
+    mov     ss, ax
+
+    mov     sp, BASEOFSTACK
     mov     si,Bootmessage
     xor     di,di
     call    ClearScreen
     call    DispStr
+
+    mov     ax, 0
+    push    ax
+    call    ResetDisk
+    add     sp, 2
+
+    call    FindLoader
     jmp     $               ; stop here when display is finish
 
 ; ===================================
-; @Function: ReadSector(dw startSector,db num)
-; @Brief: Read num sectors starting from the startSector sector
+; @Function: ResetDisk(dw driveLetter)
+; @Brief: reset disk
+; @param: [IN] driveLetter: only use low 8 bit
+; @stack: bp, ip, driveLetter
+; ===================================
+ResetDisk:
+    push    bp
+    mov     bp, sp
+    push    ax
+    push    dx
+
+    mov     ah, 0
+    mov     dl, [bp+4]
+    int     13H
+
+    pop     dx
+    pop     ax
+    mov     sp, bp
+    pop     bp
+    ret
+
+; ===================================
+; @Function: FindLoader(char* loaderName)
+; @Brief: Find loader in floppy A
+; ===================================
+FindLoader:
+    push    bp
+    mov     bp, sp
+    sub     sp, 1       ; local variable: save number of sector
+    sub     sp, 1       ; local variable: save next index of sector which to read
+    push    es
+    push    ax
+    push    bx
+    push    cx
+    push    si
+    push    di
+
+    mov     al, [IndexOfRootDir]
+    mov     [bp+2], al
+    ; step1: calculate the sector number of root directory
+    mov     ax, [BPB_RootEntCnt]
+    mov     bl, 16      ; One Dir Entry is 32 Bytes
+    div     bl          ; 32/512=1/16
+    mov     [bp+1], al
+    mov     cx, [bp+1]
+
+_NEXTSECTOR:
+    push    cx                  ; for   "loop    _NEXTSECTOR"
+    ; step2: read sector
+    mov     ax, BASEOFLOADER
+    mov     es, ax
+    mov     bx, OFFSETLOADER    ; es:bx: data go where
+    mov     ax, 1
+    push    ax
+    mov     ax, [bp+2]
+    push    ax
+    call    ReadSector
+    add     sp, 3       ; clean formal parameter
+    inc     byte [bp+2]
+
+    ; step3: match loaderName
+    mov     cx, 16              ; one sector have 512/32=16 files
+_CHECKDIRENTRY:
+    push    cx                  ;for    "loop    _CHECKDIRENTRY"
+_CHECKFILENAME:
+    mov     cx, LENOFLOADERNAME - 4     ; only use name's length
+    xor     di, di
+    mov     al, [es:bx+di]
+    cmp     al, [cs:BASEOFLOADER+di]
+    jne     _NOTMATCH
+    inc     di
+    loop    _CHECKFILENAME
+    ; run here if all match "LoaderName"
+    ; But it may just match the previous letter, and there are letters after, so we need further processing
+    mov     al, LENOFLOADERNAME - 4
+    cmp     al, 8
+    je      _CHECKEXTENSION     ; =8
+    cmp     byte [es:bx+di], 0  ; <8
+    je      _CHECKEXTENSION     ; if not equal 0, it indicate that not matched
+_NOTMATCH:
+    ; check next file if no matched
+    add     bx, 32
+    pop     cx
+    loop    _CHECKDIRENTRY
+    ; run here if all directory entry of one sector had checked but no matched
+    pop     cx
+    loop    _NEXTSECTOR
+    ; run here if all root directory had checked but no matched
+    jmp     _NOLOADER
+_CHECKEXTENSION:
+    mov     cx, 3
+    mov     si, LENOFLOADERNAME - 3
+    mov     di, 9               ; start index of extension name
+__CHECK_EXTENSION:
+    mov     al, [cs:BASEOFLOADER + si]
+    cmp     al, [es:bx+di]
+    jne     _NOTMATCH
+    inc     si
+    inc     di
+    loop    __CHECK_EXTENSION
+    ; run here if all file name matched
+_MATCHFILE:
+    mov     ax, cs
+    mov     ds, ax
+    mov     si, FoundLoaderMsg
+    mov     di, 10*80*2
+    call    DispStr
+    jmp     $
+_NOLOADER:
+    mov     ax, cs
+    mov     ds, ax
+    mov     si, NoLoaderMsg
+    mov     di, 11*80*2
+    call    DispStr
+    jmp     $
+
+    push    di
+    push    si
+    pop     cx
+    pop     bx
+    pop     ax
+    pop     es
+    mov     sp, bp
+    pop     bp
+    ret
+
+; ===================================
+; @Function: ReadSector(dw startSector,dw num)
+; @Brief: Read num sectors starting from the startSector sector to es:bx
 ;         -------------------------------------------------------------
 ;         扇区号求扇区在磁盘中的位置 (扇区号 -> 柱面号, 起始扇区, 磁头号) (LBA -> CHS)
 ;         -------------------------------------------------------------
@@ -47,7 +193,7 @@ LABEL_BOOT:
 ;          每磁道扇区数       │
 ;                           └ 余 z => 起始扇区号 = z + 1
 ; @param: [IN] startSector
-; @param: [IN] num
+; @param: [IN] num: only use low 8 bit
 ; @stack: bp, ip, startSector, num
 ; ===================================
 ReadSector:
@@ -84,15 +230,15 @@ _GoOnReading:
     ret
 
 ; ===================================
-; @Function: Disp_Str(ds:si, di)
+; @Function: DispStr(ds:si, di)
 ; @Brief: Display string which end with 0
 ; @param: [IN] ds:si data from where
 ; @param: [IN] di data go where
 ; @usage:   mov   ax, cs
-;           mov   cs, ds
+;           mov   ds, ax
 ;           mov   si, STRING
 ;           mov   di, 10*80*2
-;           call  Disp_Str
+;           call  DispStr
 ; ===================================
 DispStr:
     push    es
