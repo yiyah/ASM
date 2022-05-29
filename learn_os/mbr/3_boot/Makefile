@@ -24,6 +24,7 @@ dd_4:
 	dd if=4.bin of=../b.img bs=512 count=1 conv=notrunc
 
 dd_5:
+	nasm 5_find_loader.asm -o 5.bin
 	dd if=5.bin of=../b.img bs=512 count=1 conv=notrunc
 
 umount_file:

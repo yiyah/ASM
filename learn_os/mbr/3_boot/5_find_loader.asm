@@ -27,7 +27,7 @@ Bootmessage:        db      'Hello world!', 0
 FoundLoaderMsg:     db      'Found loader!', 0
 NoLoaderMsg:        db      'NO loader', 0
 IndexOfRootDir:     db      19
-LoaderName:         db      'loader.bin',0   ; length <= 8 (not include ".bin")
+LoaderName:         db      'LOADER.BIN',0   ; length <= 8 (not include ".bin")
 LENOFLOADERNAME     equ     ($ - LoaderName - 1)
 BASEOFSTACK         equ     0x7C00
 BASEOFLOADER        equ     0x9000
@@ -76,14 +76,14 @@ ResetDisk:
     ret
 
 ; ===================================
-; @Function: FindLoader(char* loaderName)
+; @Function: FindLoader()
 ; @Brief: Find loader in floppy A
 ; ===================================
 FindLoader:
     push    bp
     mov     bp, sp
-    sub     sp, 1       ; local variable: save number of sector
-    sub     sp, 1       ; local variable: save next index of sector which to read
+    sub     sp, 1       ; [bp+1] local variable: save number of root directory sector
+    sub     sp, 1       ; [bp+2] local variable: save next index of sector which to read
     push    es
     push    ax
     push    bx
@@ -108,21 +108,21 @@ _NEXTSECTOR:
     mov     bx, OFFSETLOADER    ; es:bx: data go where
     mov     ax, 1
     push    ax
-    mov     ax, [bp+2]
+    mov     al, [bp+2]
     push    ax
     call    ReadSector
-    add     sp, 3       ; clean formal parameter
+    add     sp, 4               ; clean formal parameter
     inc     byte [bp+2]
 
     ; step3: match loaderName
     mov     cx, 16              ; one sector have 512/32=16 files
 _CHECKDIRENTRY:
     push    cx                  ;for    "loop    _CHECKDIRENTRY"
-_CHECKFILENAME:
     mov     cx, LENOFLOADERNAME - 4     ; only use name's length
     xor     di, di
+_CHECKFILENAME:
     mov     al, [es:bx+di]
-    cmp     al, [cs:BASEOFLOADER+di]
+    cmp     al, [cs:LoaderName+di]      ;0x0:0x7cf3
     jne     _NOTMATCH
     inc     di
     loop    _CHECKFILENAME
@@ -131,12 +131,12 @@ _CHECKFILENAME:
     mov     al, LENOFLOADERNAME - 4
     cmp     al, 8
     je      _CHECKEXTENSION     ; =8
-    cmp     byte [es:bx+di], 0  ; <8
-    je      _CHECKEXTENSION     ; if not equal 0, it indicate that not matched
+    cmp     byte [es:bx+di], 0x20   ; <8
+    je      _CHECKEXTENSION     ; if not equal 0x20, it indicate that not matched
 _NOTMATCH:
     ; check next file if no matched
     add     bx, 32
-    pop     cx
+    pop     cx                  ; file number
     loop    _CHECKDIRENTRY
     ; run here if all directory entry of one sector had checked but no matched
     pop     cx
@@ -146,9 +146,9 @@ _NOTMATCH:
 _CHECKEXTENSION:
     mov     cx, 3
     mov     si, LENOFLOADERNAME - 3
-    mov     di, 9               ; start index of extension name
+    mov     di, 8               ; start index of extension name in FAT12
 __CHECK_EXTENSION:
-    mov     al, [cs:BASEOFLOADER + si]
+    mov     al, [cs:LoaderName + si]
     cmp     al, [es:bx+di]
     jne     _NOTMATCH
     inc     si
@@ -203,7 +203,7 @@ ReadSector:
     push    cx
     push    dx
 
-    mov	    dl, [BPB_SecPerTrk] ; bl: 除数
+    mov	    dl, [BPB_SecPerTrk] ; dl: 除数
     mov     ax, [bp+4]
     div	    dl                  ; y 在 al 中, z 在 ah 中
     inc	    ah                  ; z++
