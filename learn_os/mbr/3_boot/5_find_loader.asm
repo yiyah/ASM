@@ -23,11 +23,11 @@ nop
 	BS_VolLab	    DB 'OrangeS0_02'; 卷标, 必须 11 个字节
 	BS_FileSysType	DB 'FAT12   '	; 文件系统类型, 必须 8个字节  
 
-Bootmessage:        db      'Hello world!', 0
-FoundLoaderMsg:     db      'Found loader!', 0
-NoLoaderMsg:        db      'NO loader', 0
+Bootmessage:        db      'H', 0
+FoundLoaderMsg:     db      'Fo l!', 0
+NoLoaderMsg:        db      'NO l', 0
 IndexOfRootDir:     db      19
-LoaderName:         db      'LOADER.BIN',0   ; length <= 8 (not include ".bin")
+LoaderName:         db      'A.TXT',0   ; length <= 8 (not include ".bin")
 LENOFLOADERNAME     equ     ($ - LoaderName - 1)
 BASEOFSTACK         equ     0x7C00
 BASEOFLOADER        equ     0x9000
@@ -42,7 +42,7 @@ LABEL_BOOT:
     mov     sp, BASEOFSTACK
     mov     si,Bootmessage
     xor     di,di
-    call    ClearScreen
+    ;call    ClearScreen
     call    DispStr
 
     mov     ax, 0
@@ -161,6 +161,10 @@ _MATCHFILE:
     mov     si, FoundLoaderMsg
     mov     di, 10*80*2
     call    DispStr
+    mov     ax, [es:bx+0x1A]            ; 0x1A is start cluster of file
+    push    ax
+    call    GetFATEntry
+    add     sp, 2
     jmp     $
 _NOLOADER:
     mov     ax, cs
@@ -176,6 +180,64 @@ _NOLOADER:
     pop     bx
     pop     ax
     pop     es
+    mov     sp, bp
+    pop     bp
+    ret
+
+
+; ===================================
+; @Function: ax = GetFATEntry(dw startCluster)
+; @Brief: get value according to the startCluster
+;         This function will calculate the offset of the startCluster
+;         and return the value in FAT.
+; @param: startCluster: range[2,3072]
+; @return: ax: vaule of startCluster in FAT
+; ===================================
+GetFATEntry:
+    push    bp
+    mov     bp, sp
+    sub     sp, 2           ; local variable: flag of if read in odd cluster, 1: odd, 0: even
+                            ; if odd cluster: high 4bits of middle byte is low 4 bit of FAT entry
+    push    bx
+    push    dx
+    push    es
+    push    si
+
+    mov     ax, BASEOFLOADER
+    sub     ax, 0x40        ; left 1K space to save 2 sectors of FAT
+    mov     es, ax          ; becase this is segment address
+    mov     word [bp-2], 0  ; default is 0: not odd cluster
+    mov     ax, [bp+4]      ; startCluster
+    mov     bx, 3           ; need x*1.5, so x*3/2
+    mul     bx              ; ax max is 3072*3=9216, so never use dx
+    mov     bx, 2           ; but if ax is max, div 2 will use dx
+    xor     dx, dx          ; dx: high 16bit; ax: low 16bit
+    div     bx              ; ax is offset in FAT
+    mov     [bp-2], dx      ; save flag: dx is 0 or 1
+    xor     dx, dx          ; dx: high 16bit; ax: low 16bit
+    mov     bx, [BPB_BytsPerSec]
+    div     bx              ; ax
+                            ; ax <- 商 (FATEntry 所在的扇区相对于 FAT 的扇区号)
+                            ; dx <- 余数 (FATEntry 在扇区内的偏移)
+    add     ax, 1           ; sector of FAT Entry
+    mov     bx, 2           ; read how many sectors
+    push    bx
+    push    ax
+    mov     bx, 0
+    call    ReadSector
+    add     sp, 4
+    mov     si, dx          ; offset in current sector of FAT
+    mov     ax, [es:bx+si]  ; save FAT entry
+    cmp     word [bp-2], 0
+    je      _ISEVENCLUSTER
+    shr     ax, 4
+_ISEVENCLUSTER:
+    and     ax, 0x0FFF
+
+    pop     si
+    pop     es
+    pop     dx
+    pop     bx
     mov     sp, bp
     pop     bp
     ret
@@ -265,27 +327,27 @@ _Disp_ret:
 ; ===================================
 ; Function: clear screen
 ; ===================================
-ClearScreen:
-    push    ax
-    push    cx
-    push    di
-    push    es
-
-    mov     ax, 0xB800
-    mov     es, ax
-    mov     cx,25*80        ; total 4000 Bytes
-    mov     ax,0            ; but I use ax so it will div 2
-    xor     di,di
-Clear_Screen:
-    mov     [es:di],ax
-    add     di,2
-    loop    Clear_Screen
-
-    pop     es
-    pop     di
-    pop     cx
-    pop     ax
-    ret
+;ClearScreen:
+;    push    ax
+;    push    cx
+;    push    di
+;    push    es
+;
+;    mov     ax, 0xB800
+;    mov     es, ax
+;    mov     cx,25*80        ; total 4000 Bytes
+;    mov     ax,0            ; but I use ax so it will div 2
+;    xor     di,di
+;Clear_Screen:
+;    mov     [es:di],ax
+;    add     di,2
+;    loop    Clear_Screen
+;
+;    pop     es
+;    pop     di
+;    pop     cx
+;    pop     ax
+;    ret
 
 times   510-($-$$) db 0
 dw      0xAA55
