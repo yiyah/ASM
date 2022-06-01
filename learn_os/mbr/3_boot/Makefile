@@ -17,8 +17,12 @@ mount_file:
 	cp 4.com /mnt/floppy
 	umount /mnt/floppy
 
-5:
+5:mount_file
 	nasm 5_find_loader.asm -o 5.bin
+	nasm 3_loader.asm -o loader.bin
+	cp loader.bin /mnt/floppy
+	umount /mnt/floppy
+	dd if=5.bin of=../b.img bs=512 count=1 conv=notrunc
 
 dd_4:
 	dd if=4.bin of=../b.img bs=512 count=1 conv=notrunc

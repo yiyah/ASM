@@ -23,30 +23,31 @@ nop
 	BS_VolLab	    DB 'OrangeS0_02'; 卷标, 必须 11 个字节
 	BS_FileSysType	DB 'FAT12   '	; 文件系统类型, 必须 8个字节  
 
-Bootmessage:        db      'H', 0
-FoundLoaderMsg:     db      'Fo l!', 0
-NoLoaderMsg:        db      'NO l', 0
-IndexOfRootDir:     db      19
-LoaderName:         db      'A.TXT',0   ; length <= 8 (not include ".bin")
+;Bootmessage:        db      'H', 0
+FoundLoaderMsg:     db      'Y', 0
+NoLoaderMsg:        db      'N', 0
+LoaderName:         db      'LOADER.BIN',0   ; length <= 8 (not include ".bin")
 LENOFLOADERNAME     equ     ($ - LoaderName - 1)
 BASEOFSTACK         equ     0x7C00
 BASEOFLOADER        equ     0x9000
 OFFSETLOADER        equ     0x0
+INDEXOFROOTDIR      equ     19
+NUMSECTOROFROOTENTRY equ    14
+INDEXOFDATABLOCK    equ     INDEXOFROOTDIR + NUMSECTOROFROOTENTRY
 
 LABEL_BOOT:
     mov     ax, cs
     mov     ds, ax
     mov     es, ax
-    mov     ss, ax
-
+    mov     ss, ax          ; actuall ss is 0, but I think it is dangerous
     mov     sp, BASEOFSTACK
-    mov     si,Bootmessage
-    xor     di,di
-    ;call    ClearScreen
-    call    DispStr
 
-    mov     ax, 0
-    push    ax
+    ;mov     si,Bootmessage
+    ;xor     di,di
+    ;call    ClearScreen
+    ;call    DispStr
+
+    push    word 0
     call    ResetDisk
     add     sp, 2
 
@@ -82,8 +83,8 @@ ResetDisk:
 FindLoader:
     push    bp
     mov     bp, sp
-    sub     sp, 1       ; [bp+1] local variable: save number of root directory sector
-    sub     sp, 1       ; [bp+2] local variable: save next index of sector which to read
+;    sub     sp, 2       ; [bp+1] local variable: save number of root directory sector
+    sub     sp, 2       ; [bp+2] local variable: save next index of sector which to read
     push    es
     push    ax
     push    bx
@@ -91,14 +92,16 @@ FindLoader:
     push    si
     push    di
 
-    mov     al, [IndexOfRootDir]
-    mov     [bp+2], al
+    mov     word [bp+2], INDEXOFROOTDIR
     ; step1: calculate the sector number of root directory
-    mov     ax, [BPB_RootEntCnt]
-    mov     bl, 16      ; One Dir Entry is 32 Bytes
-    div     bl          ; 32/512=1/16
-    mov     [bp+1], al
-    mov     cx, [bp+1]
+    ; but actuall BPB_RootEntCnt is fixed (224), so we do not need calculated it
+    ; and it cat set to 14 (fixed)
+    ;mov     ax, [BPB_RootEntCnt]
+    ;mov     bl, 16      ; One Dir Entry is 32 Bytes
+    ;div     bl          ; 32/512=1/16
+    ;mov     [bp+1], al
+    ;mov     cx, [bp+1]
+    mov     cx, NUMSECTOROFROOTENTRY
 
 _NEXTSECTOR:
     push    cx                  ; for   "loop    _NEXTSECTOR"
@@ -106,13 +109,11 @@ _NEXTSECTOR:
     mov     ax, BASEOFLOADER
     mov     es, ax
     mov     bx, OFFSETLOADER    ; es:bx: data go where
-    mov     ax, 1
-    push    ax
-    mov     al, [bp+2]
-    push    ax
+    push    word 1
+    push    word [bp+2]         ; only use low 8bits
     call    ReadSector
     add     sp, 4               ; clean formal parameter
-    inc     byte [bp+2]
+    inc     word [bp+2]
 
     ; step3: match loaderName
     mov     cx, 16              ; one sector have 512/32=16 files
@@ -159,18 +160,18 @@ _MATCHFILE:
     mov     ax, cs
     mov     ds, ax
     mov     si, FoundLoaderMsg
-    mov     di, 10*80*2
+    mov     di, 16*80*2
     call    DispStr
-    mov     ax, [es:bx+0x1A]            ; 0x1A is start cluster of file
-    push    ax
-    call    GetFATEntry
+
+    push    word [es:bx+0x1A]       ; 0x1A is start cluster of file
+    call    LoadFile
     add     sp, 2
-    jmp     $
+    jmp     BASEOFLOADER:OFFSETLOADER
 _NOLOADER:
     mov     ax, cs
     mov     ds, ax
     mov     si, NoLoaderMsg
-    mov     di, 11*80*2
+    mov     di, 17*80*2
     call    DispStr
     jmp     $
 
@@ -190,6 +191,8 @@ _NOLOADER:
 ; @Brief: get value according to the startCluster
 ;         This function will calculate the offset of the startCluster
 ;         and return the value in FAT.
+;         Note that it will need a free space to temporarily save the read FAT sector.
+;         And now use (BASEOFLOADER-0X40):0
 ; @param: startCluster: range[2,3072]
 ; @return: ax: vaule of startCluster in FAT
 ; ===================================
@@ -219,9 +222,8 @@ GetFATEntry:
     div     bx              ; ax
                             ; ax <- 商 (FATEntry 所在的扇区相对于 FAT 的扇区号)
                             ; dx <- 余数 (FATEntry 在扇区内的偏移)
-    add     ax, 1           ; sector of FAT Entry
-    mov     bx, 2           ; read how many sectors
-    push    bx
+    add     ax, 1           ; sector of FAT Entry     
+    push    word 2          ; read how many sectors
     push    ax
     mov     bx, 0
     call    ReadSector
@@ -241,6 +243,47 @@ _ISEVENCLUSTER:
     mov     sp, bp
     pop     bp
     ret
+
+; ===================================
+; @Function: LoadFile(dw startCluster)
+; @Brief: load file start with it's first cluster
+;         load to BASEOFLOADER:0
+; @param: startCluster: range[2,3072]
+; ===================================
+LoadFile:
+    push    bp
+    mov     bp, sp
+    push    ax
+    push    bx
+    push    es
+
+    mov     ax, BASEOFLOADER
+    mov     es, ax
+    mov     bx, 0
+    mov     ax, [bp+4]      ; startCluster
+    add     ax, INDEXOFDATABLOCK - 2    ; (-2) due to first cluster is 2 in data block
+_GOONLOADING:
+    push    word 1
+    push    ax
+    call    ReadSector
+    add     sp, 4
+
+    push    word [bp+4]
+    call    GetFATEntry
+    add     sp, 2
+
+    cmp     ax, 0x0FFF
+    je      _ENDOFFILE
+    add     bx, 512                     ; next address to save file
+    add     ax, INDEXOFDATABLOCK - 2    ; (-2) due to first cluster is 2 in data block
+    jmp     _GOONLOADING
+_ENDOFFILE:
+    pop     es
+    pop     bx
+    pop     ax
+    pop     bp
+    ret
+
 
 ; ===================================
 ; @Function: ReadSector(dw startSector,dw num)
