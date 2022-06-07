@@ -26,7 +26,7 @@ nop
 ;Bootmessage:        db      'H', 0
 FoundLoaderMsg:     db      'Y', 0
 NoLoaderMsg:        db      'N', 0
-LoaderName:         db      'LOADER.BIN',0   ; length <= 8 (not include ".bin")
+LoaderName:         db      'L.BIN',0   ; length <= 8 (not include ".bin")
 LENOFLOADERNAME     equ     ($ - LoaderName - 1)
 BASEOFSTACK         equ     0x7C00
 BASEOFLOADER        equ     0x9000
@@ -37,8 +37,8 @@ INDEXOFDATABLOCK    equ     INDEXOFROOTDIR + NUMSECTOROFROOTENTRY
 
 LABEL_BOOT:
     mov     ax, cs
-    mov     ds, ax
-    mov     es, ax
+    ;mov     ds, ax
+    ;mov     es, ax
     mov     ss, ax          ; actuall ss is 0, but I think it is dangerous
     mov     sp, BASEOFSTACK
 
@@ -72,7 +72,6 @@ ResetDisk:
 
     pop     dx
     pop     ax
-    mov     sp, bp
     pop     bp
     ret
 
@@ -166,6 +165,7 @@ _MATCHFILE:
     push    word [es:bx+0x1A]       ; 0x1A is start cluster of file
     call    LoadFile
     add     sp, 2
+    ;jmp $
     jmp     BASEOFLOADER:OFFSETLOADER
 _NOLOADER:
     mov     ax, cs
@@ -175,8 +175,8 @@ _NOLOADER:
     call    DispStr
     jmp     $
 
-    push    di
-    push    si
+    pop     di
+    pop     si
     pop     cx
     pop     bx
     pop     ax
@@ -253,6 +253,7 @@ _ISEVENCLUSTER:
 LoadFile:
     push    bp
     mov     bp, sp
+    sub     sp, 2       ; local variable: the next FAT entry
     push    ax
     push    bx
     push    es
@@ -261,6 +262,7 @@ LoadFile:
     mov     es, ax
     mov     bx, 0
     mov     ax, [bp+4]      ; startCluster
+    mov     [bp-2], ax
     add     ax, INDEXOFDATABLOCK - 2    ; (-2) due to first cluster is 2 in data block
 _GOONLOADING:
     push    word 1
@@ -268,12 +270,14 @@ _GOONLOADING:
     call    ReadSector
     add     sp, 4
 
-    push    word [bp+4]
+    push    word [bp-2]
     call    GetFATEntry
     add     sp, 2
 
+    and     ax, 0x0FFF
     cmp     ax, 0x0FFF
     je      _ENDOFFILE
+    mov     [bp-2], ax
     add     bx, 512                     ; next address to save file
     add     ax, INDEXOFDATABLOCK - 2    ; (-2) due to first cluster is 2 in data block
     jmp     _GOONLOADING
@@ -281,6 +285,7 @@ _ENDOFFILE:
     pop     es
     pop     bx
     pop     ax
+    mov     sp, bp
     pop     bp
     ret
 
@@ -304,7 +309,8 @@ _ENDOFFILE:
 ReadSector:
     push	bp
     mov	    bp, sp
-    push    ax    
+    push    ax
+    push    bx
     push    cx
     push    dx
 
@@ -328,8 +334,8 @@ _GoOnReading:
     				            ; 这时就不停地读, 直到正确为止
     pop     dx
     pop     cx
+    pop     bx
     pop     ax
-    mov     sp, bp
     pop	    bp
 
     ret
@@ -351,9 +357,8 @@ DispStr:
     push    cx
     mov     ax,0xB800
     mov     es,ax           ; set the data destination
-    xor     cx,cx           ; reset cx for loop
 _Disp_Str:
-    xor     cx,cx
+    xor     cx,cx           ; reset cx for jcxz
     mov     cl,[ds:si]
     jcxz    _Disp_ret       ; finish display when the data is 0x00
     mov     ch,0x02         ; set color
