@@ -23,6 +23,10 @@ cp xxx.com /mnt/floppy
 umount /mnt/floppy
 
 xxd -u -a -g 1 -s +0x2600 -l 512 xxx.img
+
+nasm -f elf xxx.asm -o xxx.o
+gcc -m32 -c -o xxx.o xxx.c       ; complie 32bit-i386 elf
+ld -m elf_i386 -s -o xxx xxx.o
 ```
 
 ## Note
