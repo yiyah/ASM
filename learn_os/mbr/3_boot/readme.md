@@ -14,6 +14,14 @@ In this section, we want to use this follow to resolve it.
 
 2. loader: Mainly responsible for copying the kernel to memory, enter protect mode and handing control to kernel.
 
+* But why do not copying the kernel to memory in boot?
+
+    I think there are below reasons:
+
+    * As we know, kernel is very large, we can only use 1M address in real mode.
+
+    * Though kernel is small, but we had better let loader do enter protect mode, because this can separate kernel from hardware.
+
 ## FAT12
 
 Q: How can we read sector from disk?
