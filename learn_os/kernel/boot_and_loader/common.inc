@@ -106,10 +106,10 @@ __CHECK_EXTENSION:
     add     sp, 4               ; clear push si; push cx
 _MATCHFILE:
     mov     ax, [es:bx+0x1A]    ; return the start cluster
-    jmp     _FindFile_Exit
+    jmp     _EXIT_FINDFILE
 _NOLOADER:
     mov     ax, 0xFFFF          ; mismatch code
-_FindFile_Exit:
+_EXIT_FINDFILE:
     pop     di
     pop     cx
     mov     sp, bp
@@ -119,10 +119,10 @@ _FindFile_Exit:
 
 ; ===================================
 ; @Function: ax = _GetFATEntry(dw startCluster)
-; @Brief: get value according to the startCluster
+; @Brief: get FAT1 value according to the startCluster
 ;         This function will calculate the offset of the startCluster in FAT1
 ;         and return the value in FAT1.
-;         Note that it will need a 1K free space(es:bx) to temporarily save the read FAT sector.
+;         Note that it will need a 4K free space(es:bx) to temporarily save the read FAT sector.
 ; @param: startCluster: range[2,3072]
 ; @return: ax: vaule of startCluster in FAT
 ; @usage: 
@@ -130,6 +130,7 @@ _FindFile_Exit:
 ;       mov     bx, 0
 ;       push    word startCluster
 ;       call    _GetFATEntry
+;       add     sp, 2
 ; ===================================
 _GetFATEntry:
     push    bp
@@ -176,7 +177,7 @@ _ISEVENCLUSTER:
 ; @Brief: load file to es:bx and start with it's first cluster.
 ;         And it's principle is read (IndexOfDataBlock+startCluster-2) sector.
 ;         startCluster will change in this function for save memory, and because we only use it once so that is ok.
-; @Attention: This will temply use es:[bx-0x400] to save FAT12 table for _GetFATEntry.
+; @Attention: This will temply use [es-0x100]:bx to save FAT12 table for _GetFATEntry.
 ; @param: startCluster: range[2,3072]
 ; @param: IndexOfDataBlock: Fixed value in most cases: 33 (IndexOfRootDir + NumSectorOfRootEntry)
 ; @usage:
@@ -185,13 +186,13 @@ _ISEVENCLUSTER:
 ;         push  word IndexOfDataBlock
 ;         push  word startCluster
 ;         call  LoadFile
-;         add   sp, 2
+;         add   sp, 4
 ; ===================================
 LoadFile:
     push    bp
     mov     bp, sp
     sub     sp, 2           ; local variabel: save bx for _GetFATEntry
-    push    bx
+    push    bx              ; make bx never change after this function called
 
     mov     [bp-2], bx      ; local variabel: save bx for _GetFATEntry
     mov     ax, [bp+4]      ; startCluster
@@ -208,10 +209,10 @@ _GOONLOADING:
     push    es              ; `.
     push    bx              ;  |  
     mov     ax, es          ;  | 
-    sub     ax, 0x40        ;  | use 1K space befor es:bx to save 2 sectors of FAT (becase this is segment address)
+    sub     ax, 0x100       ;  | use 4K space befor es:bx to save 2 sectors of FAT (becase this is segment address)
     mov     es, ax          ;  | make bx never change
     mov     bx, [bp-2]      ; /  because _GetFATEntry can reuse memory
-    
+
     push    word [bp+4]     ; startCluster
     call    _GetFATEntry    ; will change ax
     add     sp, 2
@@ -275,7 +276,7 @@ ReadSector:
     and	    dh, 1               ; dh & 1 = 磁头号
 
     ; 至此, "柱面号, 起始扇区, 磁头号" 全部得到
-    mov	    dl, [BS_DrvNum]		; 驱动器号 (0 表示 A 盘)
+    mov	    dl, 0		        ; [BS_DrvNum]=0, 驱动器号 (0 表示 A 盘)
 _GoOnReading:
     mov	    ah, 2			    ; 读
     mov	    al, byte [bp+6]		; 读 al 个扇区

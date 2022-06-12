@@ -4,11 +4,11 @@
 
 %include    "fat12hdr.inc"
 
-    LoaderName:             db      'LOADER.BIN',0   ; length <= 8 (not include ".bin")
+    LoaderName:             db      'L.BIN',0   ; length <= 8 (not include ".bin")
     LENOFLOADERNAME         equ     ($ - LoaderName - 1)
     BASEOFSTACK             equ     0x7C00
     BASEOFLOADER            equ     0x9000
-    OFFSETLOADER            equ     0x0
+    OFFSETLOADER            equ     0x100
 
 LABEL_BEGIN:
     mov     ax, cs
@@ -36,7 +36,7 @@ LABEL_BEGIN:
     push    word INDEXOFDATABLOCK
     push    ax
     call    LoadFile
-    add     sp, 2
+    add     sp, 4
     jmp     BASEOFLOADER:OFFSETLOADER   ; stop here when display is finish
 _REBOOT:
     jmp     0xFFFF:0
