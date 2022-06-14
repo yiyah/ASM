@@ -7,8 +7,6 @@
     LoaderName:             db      'L.BIN',0   ; length <= 8 (not include ".bin")
     LENOFLOADERNAME         equ     ($ - LoaderName - 1)
     BASEOFSTACK             equ     0x7C00
-    BASEOFLOADER            equ     0x9000
-    OFFSETLOADER            equ     0x100
 
 LABEL_BEGIN:
     mov     ax, cs

@@ -4,6 +4,7 @@ KERNEL:=kernel.asm
 BOOT_BIN:=$(subst .asm,.bin,$(BOOT))
 LOADER_BIN:=$(subst .asm,.bin,$(LOADER))
 KERNEL_BIN:=$(subst .asm,.bin,$(KERNEL))
+ALL_TARGET=$(wildcard *.bin)
 
 IMG:=../../mbr/b.img
 FLOPPY:=/mnt/floppy
@@ -27,4 +28,4 @@ $(KERNEL_BIN) : $(KERNEL)
 	nasm -o $@ $<
 
 clean:
-	rm $(LOADER_BIN) $(BOOT_BIN)
+	rm $(ALL_TARGET)

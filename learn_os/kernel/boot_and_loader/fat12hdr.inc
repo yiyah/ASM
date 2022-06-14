@@ -30,3 +30,5 @@
     INDEXOFROOTDIR          equ     19          ; Root Directory 的第一个扇区号
     NUMSECTOROFROOTENTRY    equ     14          ; 根目录占用空间
     INDEXOFDATABLOCK        equ     INDEXOFROOTDIR + NUMSECTOROFROOTENTRY
+    BASEOFLOADER            equ     0x9000
+    OFFSETLOADER            equ     0x100
