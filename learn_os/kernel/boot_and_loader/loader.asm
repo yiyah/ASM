@@ -33,6 +33,8 @@ SelVideo    equ     LABEL_DESC_VIDEO - LABEL_GDT + SA_RPL3
     BASEOFKERNEL            equ     0x8000
     OFFSETKERNEL            equ     0x00
     BASEOFLOADERPHYADDR     equ     BASEOFLOADER*0x10   ; physical adderss of loader
+    PAGE_DIR_BASEADDRES     equ     0x100000
+    PAGE_TBL_BASEADDRES     equ     0x101000
 
 [section .s16]
 LOADER_BEGIN:
@@ -179,6 +181,8 @@ LABEL_PM_START:
     mov     ss, ax
     mov     esp, TOPOFSTACK
 
+    call    SetupPaging
+
     mov     ax, SelVideo
     mov     es, ax
     mov     edi, 3*80*2+15*2
@@ -186,6 +190,7 @@ LABEL_PM_START:
     call    DispStr_Long
 
     call    DispMemoryInfo
+
     jmp     $
 
 ; ===================================
@@ -305,6 +310,52 @@ _Disp_AL:
     pop     eax
     ret
 
+; ===================================
+; @Function: SetupPaging
+; @Brief: configure Page Directory and Page Directory Table
+;         According PAGE_DIR_BASEADDRES and PAGE_TBL_BASEADDRES.
+; ===================================
+SetupPaging:
+    push    es
+    push    eax
+    push    ecx
+    push    edi
+
+    ; setup page directory
+    mov     ax, SelFlatRW
+    mov     es, ax
+    mov     edi, PAGE_DIR_BASEADDRES
+    mov     ecx, 1024
+    xor     eax, eax
+    mov     eax, PAGE_TBL_BASEADDRES | PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_DIR:
+    stosd                       ; copy eax to es:edi
+    add     eax, 4096           ; base address of next PTE
+    loop    _SETUP_PAGE_DIR
+
+    ; setup page table
+    mov     edi, PAGE_TBL_BASEADDRES
+    mov     ecx, 1024 * 1024
+    xor     eax, eax
+    mov     eax, PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_TABLE:
+    stosd
+    add     eax, 4096
+    loop    _SETUP_PAGE_TABLE
+
+    mov     eax, PAGE_DIR_BASEADDRES
+    mov     cr3, eax
+    mov     eax, cr0
+    or      eax, 0x80000000     ; set PG flag for use page mechanism
+    mov     cr0, eax
+;    jmp     short _EXIT_SETUP_PAGING   ; `.
+;_EXIT_SETUP_PAGING:                    ;  | This is for debug, or system will hang on.
+;    nop                                ; /  But I had never debug here. Just for notes.
+    pop     edi
+    pop     ecx
+    pop     eax
+    pop     es
+    ret
 
 [section .data32]
 ALIGN   32
