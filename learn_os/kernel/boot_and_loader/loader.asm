@@ -25,6 +25,7 @@ SelVideo    equ     LABEL_DESC_VIDEO - LABEL_GDT + SA_RPL3
 [section .data]
     MemoryInfo:             times   400   db  0
     NumOfARDS:              dw      0
+    MemorySize:             dd      0
     LoaderMessage:          db      'Now is in loader', 0
     KernelName:             db      'KERNEL.BIN',0  ; length <= 8 (not include ".bin")
     LENOFKERNELNAME         equ     ($ - KernelName - 1)
@@ -33,8 +34,8 @@ SelVideo    equ     LABEL_DESC_VIDEO - LABEL_GDT + SA_RPL3
     BASEOFKERNEL            equ     0x8000
     OFFSETKERNEL            equ     0x00
     BASEOFLOADERPHYADDR     equ     BASEOFLOADER*0x10   ; physical adderss of loader
-    PAGE_DIR_BASEADDRES     equ     0x100000
-    PAGE_TBL_BASEADDRES     equ     0x101000
+    PAGE_DIR_BASEADDRES     equ     0x100000        ; 1M
+    PAGE_TBL_BASEADDRES     equ     0x101000        ; 1M+4K
 
 [section .s16]
 LOADER_BEGIN:
@@ -181,7 +182,7 @@ LABEL_PM_START:
     mov     ss, ax
     mov     esp, TOPOFSTACK
 
-    call    SetupPaging
+    ;call    SetupPaging
 
     mov     ax, SelVideo
     mov     es, ax
@@ -190,6 +191,15 @@ LABEL_PM_START:
     call    DispStr_Long
 
     call    DispMemoryInfo
+
+    mov     ax, SelFlatRW
+    mov     ds, ax          ; for push memory size
+    mov     es, ax          ; for init PDE PTE
+    push    dword PAGE_TBL_BASEADDRES
+    push    dword PAGE_DIR_BASEADDRES
+    push    dword [ds:BASEOFLOADERPHYADDR+MemorySize]
+    call    SetupPagingLess
+    add     esp, 12
 
     jmp     $
 
@@ -240,12 +250,12 @@ DispMemoryInfo:
     mov     es, ax
     mov     ax, SelFlatRW
     mov     ds, ax
-    mov     edi, 6*80*2+3*2
+    mov     edi, 5*80*2+3*2
     mov     esi, BASEOFLOADERPHYADDR+ARDSTITLE
     call    DispStr_Long
 
     mov     esi, BASEOFLOADERPHYADDR+MemoryInfo
-    mov     edi, 7*80*2+3*2
+    mov     edi, 6*80*2+3*2
 
     mov     cx, [ds:BASEOFLOADERPHYADDR+NumOfARDS]
 _NEXT_ARDS:
@@ -261,12 +271,36 @@ _FIELD_OF_ARDS:                 ; a filed
     call    DispAL              ; ds:esi es:edi al
     loop    _FIELD_OF_ARDS      ; Finish displaying a field in an item in ARDS
     add     esi, 4
-    add     edi, 2
+    add     edi, 6              ; for cleary display
     pop     cx
     loop    _NEXT_ITEM_OF_ARDS  ; go out when finish displaying an item in ARDS
-    add     edi,2*80*2-45*2
+    add     edi,2*80*2-55*2     ; 6(space of each fields)*5+5(num of fields)*5 = 55
     pop     cx
     loop    _NEXT_ARDS
+
+    ; get memory size
+    ; mov     ax, SelFlatRW
+    ; mov     ds, ax
+    mov     esi, BASEOFLOADERPHYADDR+MemoryInfo
+    push    word [ds:BASEOFLOADERPHYADDR+NumOfARDS]
+    call    GetFreeMemorySize
+    add     esp, 2
+    mov     [ds:BASEOFLOADERPHYADDR+MemorySize], eax
+
+    ; display RAMSize title
+    mov     edi, 17*80*2
+    mov     esi, BASEOFLOADERPHYADDR+RAMMessage
+    call    DispStr_Long
+
+    ; display memory size
+    mov     edi, 17*80*2+10*2
+    mov     ecx, 4
+    mov     esi, BASEOFLOADERPHYADDR+MemorySize+3
+_DISP_NEXT_MEM_SIZE:
+    mov     al, [ds:esi]
+    call    DispAL
+    dec     esi
+    loop    _DISP_NEXT_MEM_SIZE
 
     pop     esi
     pop     edi
@@ -311,9 +345,115 @@ _Disp_AL:
     ret
 
 ; ===================================
+; @Function: eax = GetFreeMemorySize(dw NumOfARDS)
+; @Brief: Get free memory size from ARDS(ds:esi)
+; @retval: eax : memory size
+; @Usage:
+;          mov     ax, SelFlatRW
+;          mov     ds, ax
+;          mov     esi, BASEOFLOADERPHYADDR+MemoryInfo
+;          push    NumOfARDS
+;          call    GetFreeMemorySize
+; ===================================
+GetFreeMemorySize:
+    push    ebp
+    mov     ebp, esp
+    push    ebx
+    push    ecx
+    push    esi
+
+    xor     ebx, ebx                ; for save which memory type is 1
+    xor     ecx, ecx                ; prevent hight 16 bit not reset
+    mov     cx, [ebp+8]             ; NumOfARDS
+_CHECK_NEXT_ARDS:
+    mov     eax, [ds:esi+16]        ; `. type: point to the type of ARDS
+    cmp     eax, 1                  ;  | 0: can use
+    jne      _RESERVE_FOR_OS        ; /  others: can not use
+    mov     ebx, esi
+_RESERVE_FOR_OS:
+    add     esi, 20                 ; point to next ARDS
+    loop    _CHECK_NEXT_ARDS
+    mov     eax, [ds:ebx]
+    add     eax, dword [ds:ebx+8]
+
+    pop     esi
+    pop     ecx
+    pop     ebx
+    mov     esp, ebp
+    pop     ebp
+    ret
+
+; ===================================
+; @Function: SetupPagingLess(dd MemorySize, dd PAGE_DIR_BASEADDRES, dd PAGE_TBL_BASEADDRES)
+; @Brief: configure Page Directory and Page Directory Table
+;         According MemorySize to calculate how many PDE to init
+;         Also according with PAGE_DIR_BASEADDRES and PAGE_TBL_BASEADDRES.
+;         In mu machine, need init 8 PDE, and 0x100000~0x100020(32Bytes) for Page directory, 
+;         0x101000~0x109000(8*1K*4=32K) for Page table
+; @Attention: must be called after GetFreeMemorySize
+; @param: MemorySize: for calculate how many PDE to init, result will save in ecx
+; @Usage: 
+;       mov     ax, SelFlatRW
+;       mov     ds, ax          ; for push memory size
+;       mov     es, ax          ; for init PDE PTE
+;       push    dword PAGE_TBL_BASEADDRES
+;       push    dword PAGE_DIR_BASEADDRES
+;       push    dword [ds:BASEOFLOADERPHYADDR+MemorySize]
+;       call    SetupPagingLess
+;       add     esp, 12
+; ===================================
+SetupPagingLess:
+    push    ebp
+    mov     ebp, esp
+    ; calculate how many PDE need to init
+    xor     edx, edx
+    mov     eax, [ebp+8]
+    mov     ebx, 0x400000
+    div     ebx         ; result = eax...edx
+    mov     ecx, eax    ; the minimum number of PDE need to init
+    test    edx, edx    ; judge remainder if equal 0
+    jz      _NO_REMAINDER
+    inc     ecx         ; remainder != 0 need to add one more page directory table
+_NO_REMAINDER:
+    push    ecx         ; push for PTE
+    ; setup page directory
+    mov     edi, [ebp+12]       ; PAGE_DIR_BASEADDRES
+    xor     eax, eax                    ; `.
+    mov     eax, PG_P | PG_USU | PG_RWW ;  | setup PDE
+    add     eax, [ebp+16]               ; /  PAGE_TBL_BASEADDRES
+_SETUP_PAGE_DIR_LESS:
+    stosd
+    add     eax, 4096           ; base address of next PTE
+    loop    _SETUP_PAGE_DIR_LESS
+
+    ; setup page table
+    mov     edi, [ebp+16]
+    pop     eax                 ; the number of PDE
+    mov     ebx, 1024           ; the number of PTE in one PDE
+    mul     ebx                 ; calculate how many PTE
+    mov     ecx, eax
+    xor     eax, eax
+    mov     eax, PG_P | PG_USU | PG_RWW
+_SETUP_PAGE_TABLE_LESS:
+    stosd
+    add     eax, 4096
+    loop    _SETUP_PAGE_TABLE_LESS
+
+    mov     eax, [ebp+12]
+    mov     cr3, eax
+    mov     eax, cr0
+    or      eax, 0x80000000
+    mov     cr0, eax
+
+    mov    esp, ebp
+    pop    ebp
+    ret
+
+; ===================================
 ; @Function: SetupPaging
 ; @Brief: configure Page Directory and Page Directory Table
 ;         According PAGE_DIR_BASEADDRES and PAGE_TBL_BASEADDRES.
+; @Usage: call SetupPaging
 ; ===================================
 SetupPaging:
     push    es
@@ -361,7 +501,7 @@ _SETUP_PAGE_TABLE:
 ALIGN   32
 PMMessage:      db  'protect mode', 0
 ARDSTITLE:      db  'BaseAddrL  BaseAddrH  LengetLow  LengthHigh  Type', 0
-
+RAMMessage:     db  'RAM SIZE:', 0
 ; put stack at the end of data
 times   1024    db  0
 TOPOFSTACK  equ BASEOFLOADERPHYADDR + $
