@@ -24,9 +24,9 @@ umount /mnt/floppy
 
 xxd -u -a -g 1 -s +0x2600 -l 512 xxx.img
 
-nasm -f elf xxx.asm -o xxx.o
+nasm -f elf -o xxx.o xxx.asm
 gcc -m32 -c -o xxx.o xxx.c       ; complie 32bit-i386 elf
-ld -m elf_i386 -s -o xxx xxx.o
+ld -m elf_i386 -s -Ttext 0x30400 -o xxx.bin xxx.o yyy.o zzz.o
 ```
 
 ## Note

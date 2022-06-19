@@ -15,7 +15,7 @@ LABEL_DESC_FLAT_RW: Descriptor       0, 0xFFFFF, DA_DRW|DA_32|DA_LIMIT_4K
 LABEL_DESC_VIDEO:   Descriptor 0xB8000,    4000, DA_DRW|DA_DPL3
 
 LENOFGDT    equ     $ - LABEL_GDT
-PTROFGDT    dw      LENOFGDT - 1
+PTROFGDT    dw      LENOFGDT - 1            ; note that this is limit of GDT, so current byte cannot access, then need -1.
             dd      BASEOFLOADERPHYADDR + LABEL_GDT
 
 SelFlatC    equ     LABEL_DESC_FLAT_C - LABEL_GDT
@@ -195,7 +195,7 @@ LABEL_PM_START:
     call    DispMemoryInfo
 
     mov     ax, SelFlatRW
-    mov     ds, ax          ; for push memory size
+    ;mov     ds, ax          ; for push memory size
     mov     es, ax          ; for init PDE PTE
     push    dword PAGE_TBL_BASEADDRES
     push    dword PAGE_DIR_BASEADDRES
@@ -206,14 +206,16 @@ LABEL_PM_START:
     mov     ax, SelVideo
     mov     gs, ax
 
-    mov     ax, SelFlatRW
-    mov     ds, ax
-    mov     es, ax
+    ;mov     ax, SelFlatRW
+    ;mov     ds, ax
+    ;mov     es, ax
     mov     esi, BASEOFKERNELADDR
     push    BASEOFKERNELADDR
     call    InitELF
     add     esp,4
 
+    ; We note that when we enter kernel, ds, es, fs, ss point to SelFaltRW
+    ; gs point to SelVideo
     jmp	    SelFlatC:KernelEntryPointPhyAddr    ; Enter kernel
     jmp     $
 
