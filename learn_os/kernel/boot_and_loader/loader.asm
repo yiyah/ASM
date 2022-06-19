@@ -34,6 +34,8 @@ SelVideo    equ     LABEL_DESC_VIDEO - LABEL_GDT + SA_RPL3
     BASEOFKERNEL            equ     0x8000
     OFFSETKERNEL            equ     0x00
     BASEOFLOADERPHYADDR     equ     BASEOFLOADER*0x10   ; physical adderss of loader
+    BASEOFKERNELADDR        equ     BASEOFKERNEL*0x10   ; physical adderss of kernel
+    KernelEntryPointPhyAddr equ     0x30400         ; depends on link to where, sync with Makefile
     PAGE_DIR_BASEADDRES     equ     0x100000        ; 1M
     PAGE_TBL_BASEADDRES     equ     0x101000        ; 1M+4K
 
@@ -201,6 +203,18 @@ LABEL_PM_START:
     call    SetupPagingLess
     add     esp, 12
 
+    mov     ax, SelVideo
+    mov     gs, ax
+
+    mov     ax, SelFlatRW
+    mov     ds, ax
+    mov     es, ax
+    mov     esi, BASEOFKERNELADDR
+    push    BASEOFKERNELADDR
+    call    InitELF
+    add     esp,4
+
+    jmp	    SelFlatC:KernelEntryPointPhyAddr    ; Enter kernel
     jmp     $
 
 ; ===================================
@@ -496,6 +510,8 @@ _SETUP_PAGE_TABLE:
     pop     eax
     pop     es
     ret
+
+%include "elf_parse.inc"
 
 [section .data32]
 ALIGN   32

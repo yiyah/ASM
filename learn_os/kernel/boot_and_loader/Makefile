@@ -4,7 +4,9 @@ KERNEL:=kernel.asm
 BOOT_BIN:=$(subst .asm,.bin,$(BOOT))
 LOADER_BIN:=$(subst .asm,.bin,$(LOADER))
 KERNEL_BIN:=$(subst .asm,.bin,$(KERNEL))
-ALL_TARGET=$(wildcard *.bin)
+ALL_TARGET+=$(wildcard *.bin) \
+			$(wildcard *.o)
+DEPENDENCY_FILE:=$(wildcard *.inc)
 
 IMG:=../../mbr/b.img
 FLOPPY:=/mnt/floppy
@@ -18,14 +20,15 @@ everything : $(BOOT_BIN) $(LOADER_BIN) $(KERNEL_BIN)
 	sudo cp -v $(KERNEL_BIN) $(FLOPPY)
 	sudo umount $(FLOPPY)
 
-$(BOOT_BIN) : $(BOOT)
+$(BOOT_BIN) : $(BOOT) $(DEPENDENCY_FILE)
 	nasm -o $@ $<
 
-$(LOADER_BIN) : $(LOADER)
+$(LOADER_BIN) : $(LOADER) $(DEPENDENCY_FILE)
 	nasm -o $@ $<
 
 $(KERNEL_BIN) : $(KERNEL)
-	nasm -o $@ $<
+	nasm -f elf -o $(subst .asm,.o,$(KERNEL)) $<
+	ld -m elf_i386 -s -Ttext 0x30400 -o $@ $(subst .asm,.o,$(KERNEL))
 
 clean:
 	rm $(ALL_TARGET)
