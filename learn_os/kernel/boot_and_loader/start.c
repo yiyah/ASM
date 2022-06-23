@@ -17,5 +17,5 @@ PUBLIC void cstart()
     );
 
     *((u16*)(&gdt_ptr[0])) = DESC_NUM * sizeof(DESCRIPTOR) - 1;
-    *((u32*)(&gdt_ptr[2])) = (u32*)gdt;
+    *((u32*)(&gdt_ptr[2])) = (u32)gdt;
 }
