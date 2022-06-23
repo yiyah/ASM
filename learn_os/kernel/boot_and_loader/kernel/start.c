@@ -10,7 +10,7 @@ PUBLIC DESCRIPTOR gdt[DESC_NUM];
 
 PUBLIC void cstart()
 {
-    disp_str("kernel start\nhello world");
+    disp_str("kernel start\nhello world\nyiya");
     memcpy(gdt,                             /* new GDT */
         (void*)(*((u32*)(&gdt_ptr[2]))),    /* base of old GDT */
         *((u16*)(&gdt_ptr[0])) + 1          /* limit of old GDT */

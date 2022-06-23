@@ -1,46 +1,68 @@
-BOOT:=boot.asm
-LOADER:=loader.asm
-KERNEL:=kernel.asm
-BOOT_BIN:=$(subst .asm,.bin,$(BOOT))
-LOADER_BIN:=$(subst .asm,.bin,$(LOADER))
-KERNEL_BIN:=$(subst .asm,.bin,$(KERNEL))
-ALL_TARGET+=$(wildcard *.bin) \
-			$(wildcard *.o)
-DEPENDENCY_FILE:=$(wildcard *.inc)
+# it must have the same value with "KernelEntryPointPhyAddr" in load.asm
+ENTRYPOINT	  	:= 0x30400
+# Offset of entry point in kernel file
+# It depends on ENTRYPOINT
+ENTRYOFFSET		= 0x400
 
-IMG:=../../mbr/b.img
-FLOPPY:=/mnt/floppy
+# compile tool and parameters
+ASM 			= nasm
+DASM 			= ndisasm
+CC				= gcc
+LD				= ld
+ASMBFLAGS 		= -I boot/include/
+ASMKFLAGS		= -f elf
+CFLAGS			= -I include/ -m32
+LDFLAGS			= -m elf_i386 -s -Ttext $(ENTRYPOINT)
+DASMFLAGS		= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
-.PHONY : everything
+# generate file
+HBOOT		= boot/boot.bin boot/loader.bin
+HKERNEL 	= kernel.bin
+OBJS 		= kernel/kernel.o kernel/start.o lib/kliba.o lib/string.o
+DASMOUTPUT	= kernel.bin.asm
 
-test:
-	nasm -f elf -o kernel.o kernel.asm
-	nasm -f elf -o string.o string.asm
-	nasm -f elf -o kliba.o kliba.asm
-	gcc -m32 -c -o start.o start.c
-	ld -m elf_i386 -s -Ttext 0x30400 -o kernel.bin kernel.o string.o start.o kliba.o
-	dd if=$(BOOT_BIN) of=$(IMG) bs=512 count=1 conv=notrunc
-	sudo mount -o loop $(IMG) $(FLOPPY)
-	sudo cp -v $(LOADER_BIN) $(FLOPPY)/L.BIN
-	sudo cp -v $(KERNEL_BIN) $(FLOPPY)
-	sudo umount $(FLOPPY)
+.PHONY : everything clean all buildimg disasm
 
-everything : $(BOOT_BIN) $(LOADER_BIN) $(KERNEL_BIN) 
-	dd if=$(BOOT_BIN) of=$(IMG) bs=512 count=1 conv=notrunc
-	sudo mount -o loop $(IMG) $(FLOPPY)
-	sudo cp -v $(LOADER_BIN) $(FLOPPY)/L.BIN
-	sudo cp -v $(KERNEL_BIN) $(FLOPPY)
-	sudo umount $(FLOPPY)
+everything: $(HBOOT) $(HKERNEL)
 
-$(BOOT_BIN) : $(BOOT) $(DEPENDENCY_FILE)
-	nasm -o $@ $<
+all: clean everything
 
-$(LOADER_BIN) : $(LOADER) $(DEPENDENCY_FILE)
-	nasm -o $@ $<
+# compile boot/
+boot/boot.bin : boot/boot.asm boot/include/fat12hdr.inc boot/include/common.inc 
+	$(ASM) $(ASMBFLAGS) -o $@ $<
 
-$(KERNEL_BIN) : $(KERNEL)
-	nasm -f elf -o $(subst .asm,.o,$(KERNEL)) $<
-	ld -m elf_i386 -s -Ttext 0x30400 -o $@ $(subst .asm,.o,$(KERNEL))
+boot/loader.bin : boot/loader.asm boot/include/*
+	$(ASM) $(ASMBFLAGS) -o $@ $<
+
+# compile kernel
+$(HKERNEL) : $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+
+kernel/kernel.o : kernel/kernel.asm
+	$(ASM) $(ASMKFLAGS) -o $@ $<
+
+kernel/star.o : kernel/star.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+# compile lib
+lib/kliba.o : lib/kliba.asm
+	$(ASM) -f elf -o $@ $<
+
+lib/string.o : lib/string.asm
+	$(ASM) -f elf -o $@ $<
+
+# for setup bochs
+buildimg:
+	dd if=boot/boot.bin of=../../mbr/b.img bs=512 count=1 conv=notrunc
+	sudo mount -o loop ../../mbr/b.img /mnt/floppy
+	sudo cp -v boot/loader.bin /mnt/floppy/L.BIN
+	sudo cp -v kernel.bin /mnt/floppy
+	sudo umount /mnt/floppy
+
+# for debug
+disasm : $(HKERNEL)
+	$(DASM) $(DASMFLAGS) $< > $(DASMOUTPUT)
+	rm -f $(OBJS)
 
 clean:
-	rm $(ALL_TARGET)
+	rm -f $(HBOOT) $(HKERNEL) $(OBJS) $(DASMOUTPUT)
