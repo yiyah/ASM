@@ -49,11 +49,19 @@ SelFlatCRW      equ     LABEL_DESC_FLATCRW  -   LABEL_GDT
 [BITS   32]
 ALIGN   32
 LABEL_IDT:
-%rep    255
+%rep    32
 
     Gate    SelCode32,  SpuriousHandler,    0,  DA_386IGATE
 
 %endrep
+.20H:   Gate    SelCode32,        ClockHandler,     0,  DA_386IGATE
+%rep    95
+
+    Gate    SelCode32,  SpuriousHandler,    0,  DA_386IGATE
+
+%endrep
+.80H:   Gate    SelCode32,      UserIntHandler,     0,  DA_386IGATE
+
 LenOfIDT    equ     $ - LABEL_IDT
 PTROFIDT    dw  LenOfIDT - 1    ; limit of IDT
             dd  0               ; base address of IDT
@@ -209,7 +217,7 @@ LABEL_REAL_ENTRY:
 
     sti
 
-	mov	    ax, 0x4c00
+    mov     ax, 0x4c00
     int     21H
 LenOfCode16     equ     $ - $$
 ; END of [SECTION    .s16]
@@ -266,7 +274,9 @@ LABEL_SEG_CODE32:
     call    SelFlatC:PagingDemo
 
     call    Init8259A
+    int     0x79
     int     0x80
+    sti
     jmp     $
 
     jmp     SelBack2Real:0
@@ -664,11 +674,32 @@ Init8259A:
 
 _SpuriousHandler:
 SpuriousHandler     equ     _SpuriousHandler - $$
-	mov	ah, 0Ch				; 0000: 黑底    1100: 红字
-	mov	al, '!'
-	mov	[gs:((80 * 0 + 75) * 2)], ax	; 屏幕第 0 行, 第 75 列。
-	jmp	$
-	iretd
+    mov     ah, 0Ch                         ; 0000: 黑底    1100: 红字
+    mov     al, 'a'
+    mov     [gs:((80 * 0 + 75) * 2)], ax    ; 屏幕第 0 行, 第 75 列。
+    iretd
+
+_UserIntHandler:
+UserIntHandler      equ      _UserIntHandler - $$
+    mov     ah, 0Ch                         ; 0000: 黑底    1100: 红字
+    mov     al, 'b'
+    mov     [gs:((80 * 0 + 76) * 2)], ax    ; 屏幕第 0 行, 第 75 列。
+    iretd
+
+numClock:    db  0
+_ClockHandler:
+ClockHandler        equ      _ClockHandler - $$
+    mov     ax, SelNormal
+    mov     ds, ax
+    inc     byte [ds:numClock]
+    cmp     byte [ds:numClock], 100
+    jb      _ClockHandlerRet                ; jmp below
+    mov     byte [ds:numClock], 0
+    inc     byte [gs:(80*0+76) * 2]
+_ClockHandlerRet:
+    mov     al, 0x20
+    out     0x20, al                        ; send EOI to 8259A
+    iretd
 
 %include    "lib.inc"
     OffsetDispStr   equ     DispStr - LABEL_SEG_CODE32
