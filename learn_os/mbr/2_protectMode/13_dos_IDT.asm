@@ -43,8 +43,22 @@ SelCode32       equ     LABEL_DESC_CODE32   -   LABEL_GDT
 SelBack2Real    equ     LABEL_DESC_BACK2REAL-   LABEL_GDT
 SelFlatC        equ     LABEL_DESC_FLATC    -   LABEL_GDT
 SelFlatCRW      equ     LABEL_DESC_FLATCRW  -   LABEL_GDT
-
 ; END of [SECTION    .sgdt]
+
+[SECTION    .idt]
+[BITS   32]
+ALIGN   32
+LABEL_IDT:
+%rep    255
+
+    Gate    SelCode32,  SpuriousHandler,    0,  DA_386IGATE
+
+%endrep
+LenOfIDT    equ     $ - LABEL_IDT
+PTROFIDT    dw  LenOfIDT - 1    ; limit of IDT
+            dd  0               ; base address of IDT
+; End of [SECTION    .idt]
+
 [SECTION    .sstackCode32]
 ALIGN   32
 LABEL_STACK:
@@ -153,10 +167,22 @@ LABEL_GET_MEM_OK:
     shl     eax, 4
     add     eax, LABEL_GDT
     mov     [PTROFGDT+2], eax
+
+    ; init the pointer of IDT
+    xor     eax, eax
+    mov     ax, cs
+    shl     eax, 4
+    add     eax, LABEL_IDT
+    mov     [PTROFIDT+2], eax
+
+    ; load GDT
     lgdt    [PTROFGDT]
 
     ; close interruption
     cli
+
+    ; load IDT (after cli)
+    lidt    [PTROFIDT]
 
     ; open A20
     in      al, 0x92
@@ -196,6 +222,7 @@ LABEL_SEG_CODE32:
     mov     ds, ax
     mov     es, ax
     mov     fs, ax
+    mov     ax, SelVideo
     mov     gs, ax
     mov     ax, SelStack
     mov     ss, ax
@@ -237,6 +264,10 @@ LABEL_SEG_CODE32:
     add     esp, 2
 
     call    SelFlatC:PagingDemo
+
+    call    Init8259A
+    int     0x80
+    jmp     $
 
     jmp     SelBack2Real:0
 
@@ -571,6 +602,73 @@ _SETUP_PAGE_TABLE_LESS_PSWITCH:
     mov     esp, ebp
     pop     ebp
     ret
+
+; ===================================
+; @Function: io_delay
+; @Brief: delay for peripheral
+; ===================================
+io_delay:
+    nop
+    nop
+    nop
+    nop
+    ret
+
+; ===================================
+; @Function: Init8259A
+; @Brief: This function init 8259A
+;        master port: 0x20, 0x21
+;        slave port:  0xA0, 0xA1
+;        set IR0~IR7  interrupt vector is 0x20~0x27 (ICW2)
+;        set IR8~IR15 interrupt vector is 0x28~0x2F
+; ===================================
+Init8259A:
+    push    eax
+
+    mov     al, 0x11        ; `. ICW1
+    out     0x20, al        ;  | master 8259A
+    call    io_delay        ;  |
+    out     0xA0, al        ;  | slave 8259A
+    call    io_delay        ; /
+
+    mov     al, 0x20        ; `. ICW2
+    out     0x21, al        ;  | master 8259A, IR0 = interruption vector 0x20
+    call    io_delay        ;  |
+    mov     al, 0x28        ;  |
+    out     0xA1, al        ;  | slave 8259A,  IR8 = interruption vector 0x28
+    call    io_delay        ; /
+
+    mov     al, 0x04        ; `. ICW3
+    out     0x21, al        ;  | master 8259A, IR2 connect slave 8259A
+    call    io_delay        ;  |
+    mov     al, 0x02        ;  | slave connect master IR2
+    out     0xA1, al        ;  | slave 8259A
+    call    io_delay        ; /
+
+    mov     al, 0x01        ; `. ICW4
+    out     0x21, al        ;  | master 8259A
+    call    io_delay        ;  |
+    out     0xA1, al        ;  | slave 8259A
+    call    io_delay        ; /
+
+    mov     al, 11111110b   ; `. OCW1 only open timer interrupt
+    ; mov   al, 11111111b   ;  |
+    out     0x21, al        ;  | master 8259A
+    call    io_delay        ;  |
+    mov     al, 11111111b   ;  | mask all interrupts
+    out     0xA1, al        ;  | slave 8259A
+    call    io_delay        ; /
+
+    pop     eax
+    ret
+
+_SpuriousHandler:
+SpuriousHandler     equ     _SpuriousHandler - $$
+	mov	ah, 0Ch				; 0000: 黑底    1100: 红字
+	mov	al, '!'
+	mov	[gs:((80 * 0 + 75) * 2)], ax	; 屏幕第 0 行, 第 75 列。
+	jmp	$
+	iretd
 
 %include    "lib.inc"
     OffsetDispStr   equ     DispStr - LABEL_SEG_CODE32
