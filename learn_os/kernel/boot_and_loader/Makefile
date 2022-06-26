@@ -11,14 +11,15 @@ CC				= gcc
 LD				= ld
 ASMBFLAGS		= -I boot/include/
 ASMKFLAGS		= -f elf
-CFLAGS			= -I include/ -m32 -c -fno-builtin
+CFLAGS			= -I include/ -m32 -c -fno-builtin -fno-stack-protector
 LDFLAGS			= -m elf_i386 -s -Ttext $(ENTRYPOINT)
 DASMFLAGS		= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
 # generate file
 HBOOT		= boot/boot.bin boot/loader.bin
 HKERNEL		= kernel.bin
-OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o lib/kliba.o lib/string.o
+OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
+			  lib/kliba.o lib/string.o lib/klib.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
@@ -49,12 +50,18 @@ kernel/star.o : kernel/star.c include/*
 kernel/i8259.o : kernel/i8259.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
+kernel/protect.o : kernel/protect.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
 # compile lib
 lib/kliba.o : lib/kliba.asm
 	$(ASM) -f elf -o $@ $<
 
 lib/string.o : lib/string.asm
 	$(ASM) -f elf -o $@ $<
+
+lib/klib.o : lib/klib.c include/type.h include/const.h include/proto.h
+	$(CC) $(CFLAGS) -o $@ $<
 
 # for setup bochs
 buildimg:
