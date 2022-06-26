@@ -116,13 +116,13 @@ _REBOOT:
 ; ===================================
 KillMotor:
     push    ax
-	push	dx
-	mov	    dx, 03F2h
-	mov	    al, 0
-	out	    dx, al
-	pop	    dx
+    push    dx
+    mov     dx, 03F2h
+    mov     al, 0
+    out     dx, al
+    pop     dx
     pop     ax
-	ret
+    ret
 
 ; ===================================
 ; @Function: ax = GetMemInfo
@@ -216,7 +216,7 @@ LABEL_PM_START:
 
     ; We note that when we enter kernel, ds, es, fs, ss point to SelFaltRW
     ; gs point to SelVideo
-    jmp	    SelFlatC:KernelEntryPointPhyAddr    ; Enter kernel
+    jmp     SelFlatC:KernelEntryPointPhyAddr    ; Enter kernel
     jmp     $
 
 ; ===================================

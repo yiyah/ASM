@@ -1,15 +1,15 @@
 # it must have the same value with "KernelEntryPointPhyAddr" in load.asm
-ENTRYPOINT	  	:= 0x30400
+ENTRYPOINT		:= 0x30400
 # Offset of entry point in kernel file
 # It depends on ENTRYPOINT
 ENTRYOFFSET		= 0x400
 
 # compile tool and parameters
-ASM 			= nasm
-DASM 			= ndisasm
+ASM				= nasm
+DASM			= ndisasm
 CC				= gcc
 LD				= ld
-ASMBFLAGS 		= -I boot/include/
+ASMBFLAGS		= -I boot/include/
 ASMKFLAGS		= -f elf
 CFLAGS			= -I include/ -m32
 LDFLAGS			= -m elf_i386 -s -Ttext $(ENTRYPOINT)
@@ -17,8 +17,8 @@ DASMFLAGS		= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
 # generate file
 HBOOT		= boot/boot.bin boot/loader.bin
-HKERNEL 	= kernel.bin
-OBJS 		= kernel/kernel.o kernel/start.o lib/kliba.o lib/string.o
+HKERNEL		= kernel.bin
+OBJS		= kernel/kernel.o kernel/start.o lib/kliba.o lib/string.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm

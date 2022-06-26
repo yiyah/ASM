@@ -47,7 +47,7 @@ OK. We make a step as fllow:
   jmp     0:LABEL_REAL_ENTRY
   ; and the jmp instruction like fllow
   ; so you can change the segment in real mode like
-  mov	[LABEL_GO_BACK_TO_REAL+3], ax
+  mov   [LABEL_GO_BACK_TO_REAL+3], ax
   ```
 
   |BYTE 1|BYTE 2 BYTE 3|BYTE4 BYTE 5|
@@ -61,8 +61,8 @@ OK. We make a step as fllow:
   And back to DOS.
 
   ```ASM
-  mov	ax, 0x4c00
-  int	21h		    ; DOS
+  mov   ax, 0x4c00
+  int   21h         ; DOS
   ```
 
 ## LDT
