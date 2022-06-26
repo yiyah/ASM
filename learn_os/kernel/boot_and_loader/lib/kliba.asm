@@ -1,8 +1,10 @@
 [SECTION .data]
-disp_pos	dd	0
+disp_pos    dd  0
 
 [section .text]
 global  disp_str
+global  out_byte
+global  in_byte
 
 ; ===================================
 ; @Function: disp_str(char* pszInfo)
@@ -51,4 +53,32 @@ DISP_STR_RET:
     pop     eax
     mov     esp, ebp
     pop     ebp
+    ret
+
+; ===================================
+; @Function: out_byte(dw port, db val)
+; ===================================
+out_byte:
+    push    eax
+    push    edx
+    mov     dx, [esp+4]     ; port
+    mov     al, [esp+8]     ; val
+    out     dx, al
+    nop                     ; delay
+    nop
+    pop     edx
+    pop     eax
+    ret
+
+; ===================================
+; @Function: eax = in_byte(dw port)
+; ===================================
+in_byte:
+    push    edx
+    mov     dx, [esp+4]     ; port
+    xor     eax, eax
+    in      al, dx
+    nop                     ; delay
+    nop
+    pop     edx
     ret

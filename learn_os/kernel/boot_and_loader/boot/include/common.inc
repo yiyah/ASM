@@ -259,35 +259,35 @@ _ENDOFFILE:
 ;         add     sp, 4
 ; ===================================
 ReadSector:
-    push	bp
-    mov	    bp, sp
+    push    bp
+    mov     bp, sp
     push    ax
     push    cx
     push    dx
 
-    mov	    dl, 18              ; dl: 除数, BPB_SecPerTrk=18
+    mov     dl, 18              ; dl: 除数, BPB_SecPerTrk=18
     mov     ax, [bp+4]
-    div	    dl                  ; y 在 al 中, z 在 ah 中
-    inc	    ah                  ; z++
-    mov	    cl, ah              ; cl <- 起始扇区号
-    mov	    dh, al              ; dh <- y
-    shr	    al, 1               ; y >> 1 (y/BPB_NumHeads)
-    mov	    ch, al              ; ch <- 柱面号
-    and	    dh, 1               ; dh & 1 = 磁头号
+    div     dl                  ; y 在 al 中, z 在 ah 中
+    inc     ah                  ; z++
+    mov     cl, ah              ; cl <- 起始扇区号
+    mov     dh, al              ; dh <- y
+    shr     al, 1               ; y >> 1 (y/BPB_NumHeads)
+    mov     ch, al              ; ch <- 柱面号
+    and     dh, 1               ; dh & 1 = 磁头号
 
     ; 至此, "柱面号, 起始扇区, 磁头号" 全部得到
-    mov	    dl, 0		        ; [BS_DrvNum]=0, 驱动器号 (0 表示 A 盘)
+    mov     dl, 0               ; [BS_DrvNum]=0, 驱动器号 (0 表示 A 盘)
 _GoOnReading:
-    mov	    ah, 2			    ; 读
-    mov	    al, byte [bp+6]		; 读 al 个扇区
+    mov     ah, 2               ; 读
+    mov     al, byte [bp+6]     ; 读 al 个扇区
     ; es:bx had been setted when call ReadSector
-    int	    13h
-    jc	    _GoOnReading		; 如果读取错误 CF 会被置为 1, 
-    				            ; 这时就不停地读, 直到正确为止
+    int     13h
+    jc      _GoOnReading        ; 如果读取错误 CF 会被置为 1, 
+                                ; 这时就不停地读, 直到正确为止
     pop     dx
     pop     cx
     pop     ax
-    pop	    bp
+    pop     bp
 
     ret
 

@@ -11,4 +11,8 @@ typedef struct s_descriptor
     u8  base_high;
 }DESCRIPTOR;
 
+/* interrupt vector */
+#define INT_VECTOR_IRQ0 0x20
+#define INT_VECTOR_IRQ8 0x28
+
 #endif /* __PROTECT_H_ */

@@ -11,14 +11,14 @@ CC				= gcc
 LD				= ld
 ASMBFLAGS		= -I boot/include/
 ASMKFLAGS		= -f elf
-CFLAGS			= -I include/ -m32
+CFLAGS			= -I include/ -m32 -c -fno-builtin
 LDFLAGS			= -m elf_i386 -s -Ttext $(ENTRYPOINT)
 DASMFLAGS		= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
 # generate file
 HBOOT		= boot/boot.bin boot/loader.bin
 HKERNEL		= kernel.bin
-OBJS		= kernel/kernel.o kernel/start.o lib/kliba.o lib/string.o
+OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o lib/kliba.o lib/string.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
@@ -34,14 +34,19 @@ boot/boot.bin : boot/boot.asm boot/include/fat12hdr.inc boot/include/common.inc
 boot/loader.bin : boot/loader.asm boot/include/*
 	$(ASM) $(ASMBFLAGS) -o $@ $<
 
-# compile kernel
+# compile kernel.bin
 $(HKERNEL) : $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
+# compile kernel/
 kernel/kernel.o : kernel/kernel.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
+# we also can use "gcc -M kernel/star.c -I include/" to get dependency files
 kernel/star.o : kernel/star.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/i8259.o : kernel/i8259.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 # compile lib
