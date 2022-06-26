@@ -17,8 +17,7 @@ PUBLIC void cstart()
     /* init new GDT */
     memcpy(gdt,                             /* new GDT */
         (void*)(*((u32*)(&gdt_ptr[2]))),    /* base of old GDT */
-        *((u16*)(&gdt_ptr[0])) + 1          /* limit of old GDT */
-    );
+        *((u16*)(&gdt_ptr[0])) + 1);        /* limit of old GDT */
 
     *((u16*)(&gdt_ptr[0])) = GDT_DESC_NUM * sizeof(DESCRIPTOR) - 1;
     *((u32*)(&gdt_ptr[2])) = (u32)gdt;
