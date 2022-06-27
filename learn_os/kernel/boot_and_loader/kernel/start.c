@@ -12,7 +12,7 @@ PUBLIC GATE idt[IDT_DESC_NUM];
 
 PUBLIC void cstart()
 {
-    disp_str("kernel start\nhello world\nyiya");
+    disp_str("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n--- cstart begins ---\n");
 
     /* init new GDT */
     memcpy(gdt,                             /* new GDT */
@@ -27,5 +27,6 @@ PUBLIC void cstart()
     *((u32*)(&idt_ptr[2])) = (u32)idt;
 
     init_prot();
+    disp_str("--- cstart end ---\n");
 
 }

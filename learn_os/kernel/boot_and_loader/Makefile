@@ -24,7 +24,7 @@ DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
 
-everything: $(HBOOT) $(HKERNEL)
+everything: $(HBOOT) $(HKERNEL) image
 
 all: clean everything
 
@@ -44,7 +44,7 @@ kernel/kernel.o : kernel/kernel.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
 # we also can use "gcc -M kernel/star.c -I include/" to get dependency files
-kernel/star.o : kernel/star.c include/*
+kernel/start.o : kernel/start.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/i8259.o : kernel/i8259.c include/*
@@ -64,11 +64,13 @@ lib/klib.o : lib/klib.c include/type.h include/const.h include/proto.h
 	$(CC) $(CFLAGS) -o $@ $<
 
 # for setup bochs
+image : $(HBOOT) $(HKERNEL) buildimg
+
 buildimg:
 	dd if=boot/boot.bin of=../../mbr/b.img bs=512 count=1 conv=notrunc
 	sudo mount -o loop ../../mbr/b.img /mnt/floppy
 	sudo cp -v boot/loader.bin /mnt/floppy/L.BIN
-	sudo cp -v kernel.bin /mnt/floppy
+	sudo cp -v kernel.bin /mnt/floppy/
 	sudo umount /mnt/floppy
 
 # for debug

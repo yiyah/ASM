@@ -7,7 +7,7 @@ global  disp_str
 global  disp_color_str
 global  out_byte
 global  in_byte
-
+global  send_EOI
 ; ===================================
 ; @Function: disp_str(char* pszInfo)
 ; @usage:
@@ -106,8 +106,8 @@ DISP_COLOR_STR_RET:
 out_byte:
     push    eax
     push    edx
-    mov     dx, [esp+4]     ; port
-    mov     al, [esp+8]     ; val
+    mov     dx, [esp+12]    ; port
+    mov     al, [esp+16]    ; val
     out     dx, al
     nop                     ; delay
     nop
@@ -116,11 +116,11 @@ out_byte:
     ret
 
 ; ===================================
-; @Function: eax = in_byte(dw port)
+; @Function: al = in_byte(dw port)
 ; ===================================
 in_byte:
     push    edx
-    mov     dx, [esp+4]     ; port
+    mov     dx, [esp+8]     ; port
     xor     eax, eax
     in      al, dx
     nop                     ; delay
