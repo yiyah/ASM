@@ -37,3 +37,13 @@ PUBLIC void disp_hex_fourByte(u32 hex)
     disp_hex_oneByte(szHex[2]);
     disp_hex_oneByte(szHex[3]);
 }
+
+PUBLIC void delay(u16 time)
+{
+    int i, j, k;
+    for (k = 0; k < time; k++) {
+        for (i = 0; i < 10; i++) {
+            for (j = 0; j < 10000; j++) {}
+        }
+    }
+}

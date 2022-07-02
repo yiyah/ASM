@@ -9,6 +9,8 @@ PUBLIC DESCRIPTOR gdt[GDT_DESC_NUM];
 /* IDT */
 PUBLIC u8 idt_ptr[6];
 PUBLIC GATE idt[IDT_DESC_NUM];
+/* TSS */
+PUBLIC TSS tss;
 
 PUBLIC void cstart()
 {

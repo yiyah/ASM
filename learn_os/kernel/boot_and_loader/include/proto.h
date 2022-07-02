@@ -1,8 +1,12 @@
 #ifndef __PROTO_H_
 #define __PROTO_H_
 
+#include "protect.h"
+#include "process.h"
+
 /* string.asm */
 PUBLIC void* memcpy(void* pDst, void* pSrc, int iSize);
+PUBLIC void memset(void* p_dst, u8 ch, u32 size);
 
 /* kliba.asm */
 PUBLIC void disp_str(char* pszInfo);
@@ -14,5 +18,13 @@ PUBLIC void init_prot();
 PUBLIC void init_8259A();
 PUBLIC void disp_hex_oneByte(u8 hex);
 PUBLIC void disp_hex_fourByte(u32 hex);
+PUBLIC void restart();
+
+PUBLIC void delay(u16 timef);
+
+extern PUBLIC PROCESS proc_tables[NR_TASKS];
+extern PUBLIC TSS tss;
+extern PUBLIC DESCRIPTOR gdt[GDT_DESC_NUM];
+extern PUBLIC GATE idt[IDT_DESC_NUM];
 
 #endif

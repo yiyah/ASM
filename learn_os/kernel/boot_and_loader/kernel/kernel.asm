@@ -1,11 +1,16 @@
+%include "sconst.inc"
+
 ; global function
 extern  cstart
 extern  exception_handler
 extern  spurious_irq
+extern  kernel_main
 
 ; global variable
 extern  gdt_ptr
 extern  idt_ptr
+extern  p_proc_ready
+extern  tss
 
 SEL_KERNEL_CS   equ     8       ; depend on SelFlatC in boot/loader.asm
 
@@ -47,7 +52,12 @@ global  hwint12
 global  hwint13
 global  hwint14
 global  hwint15
+global  restart
 
+; ===================================
+; @Function: _start
+; @Brief: the start of kernel.bin
+; ===================================
 _start:
     ; now is at 0x0:0x30400
     ; cs, ds, es, fs, ss is point to segment address: 0
@@ -60,15 +70,20 @@ _start:
 
     lidt    [idt_ptr]
 
-    jmp     SEL_KERNEL_CS:csinit; for force using the GDT which we init just now
-csinit:
-    sti
+    jmp     SEL_KERNEL_CS:_csinit; for force using the GDT which we init just now
+_csinit:
+
+    xor        eax, eax
+    mov        ax, SELECTOR_TSS
+    ltr        ax
+
+    ;sti
     ;hlt
     ;ud2                        ; test exception
     ;jmp     0x40:0              ; test exception
     ;push    dword 0
     ;popfd                       ; refresh eflags
-
+    jmp     kernel_main
     hlt
 
 ; ===================================
@@ -153,6 +168,7 @@ exception:
 
 ALIGN   16
 hwint00:                ; Interrupt routine for irq 0 (the clock).
+        iretd
         hwint_master    0
 
 ALIGN   16
@@ -223,3 +239,23 @@ hwint14:                ; Interrupt routine for irq 14 (AT winchester)
 ALIGN   16
 hwint15:                ; Interrupt routine for irq 15
         hwint_slave     15
+
+; ===================================
+; @Function: restart
+; @Brief: start the process
+; ===================================
+restart:
+    mov     esp, [p_proc_ready]
+    lldt    [esp + P_LDT_SEL] 
+    lea     eax, [esp + P_STACKTOP]
+    mov     dword [tss + TSS3_S_SP0], eax
+
+    pop     gs
+    pop     fs
+    pop     es
+    pop     ds
+    popad
+
+    add     esp, 4
+
+    iretd

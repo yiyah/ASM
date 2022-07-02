@@ -3,8 +3,12 @@
 #include "proto.h"
 #include "protect.h"
 
+
+
+/* 线性地址 → 物理地址 */
+#define vir2phys(seg_base, vir) (u32)(((u32)seg_base) + (u32)(vir))
+
 extern u32 disp_pos;
-extern PUBLIC GATE idt[IDT_DESC_NUM];
 
 /* interrupt handler */
 void divide_error();
@@ -51,6 +55,27 @@ PRIVATE void init_IDT_Desc(u8 intVector, u8 desc_type, int_handler handler,
     idt[intVector].attr         = desc_type | (privilege << 5);
     idt[intVector].offset_high  = (offset >> 16) & 0xFFFF;
 }
+
+PRIVATE void init_Descriptor(DESCRIPTOR* p_desc, u32 base, u32 limit, u32 attr)
+{
+    p_desc->limit_low = limit & 0xFFFF;
+    p_desc->base_low  = base & 0xFFFF;
+    p_desc->base_mid  = (base>>16) & 0xFF;
+    p_desc->attr1     = attr & 0xFF;
+    p_desc->limit_high_attr2 = ((limit>>16) & 0xF) | ((attr>>8) & 0xF0);
+    p_desc->base_high = (base>>24) & 0xFF;
+}
+
+/**
+  * @brief  get physical address according to segment (selector)
+  * @retval physical address
+  */
+PUBLIC u32 seg2phys(u16 seg)
+{
+    DESCRIPTOR* p_dest = &gdt[seg >> 3];
+    return (p_dest->base_high<<24 | p_dest->base_mid<<16 | p_dest->base_low);
+}
+
 
 PUBLIC void init_prot()
 {
@@ -107,6 +132,21 @@ PUBLIC void init_prot()
     init_IDT_Desc(INT_VECTOR_IRQ8+6, DA_386IGate, hwint14, PRIVILEGE_KRNL);
     init_IDT_Desc(INT_VECTOR_IRQ8+7, DA_386IGate, hwint15, PRIVILEGE_KRNL);
 
+    /* init tss */
+    memset(&tss, 0, sizeof(tss));
+    tss.ss0 = SELECTOR_KERNEL_DS;
+    init_Descriptor(&gdt[INDEX_TSS],
+            vir2phys(seg2phys(SELECTOR_KERNEL_DS), &tss),
+            sizeof(tss) - 1,
+            DA_386TSS);
+    tss.iobase = sizeof(tss);           /* 没有I/O许可位图 */
+
+    /* init LDT */
+    init_Descriptor(
+        &gdt[INDEX_LDT_FIRST],
+        vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_tables[0].ldts),
+        LDT_SIZE * sizeof(DESCRIPTOR) - 1,
+        DA_LDT);
 }
 
 PUBLIC void exception_handler(u32 vec_no, u32 err_code, u32 eip, u32 cs, u32 eflags)
@@ -156,7 +196,7 @@ PUBLIC void exception_handler(u32 vec_no, u32 err_code, u32 eip, u32 cs, u32 efl
     disp_color_str("eflags:", text_color);
     disp_hex_fourByte(eflags);
     //disp_str("\n\n");
-	disp_color_str("\n\n", text_color);
+    disp_color_str("\n\n", text_color);
     disp_color_str("msg:", text_color);
     disp_color_str(err_msg[vec_no], text_color);
 

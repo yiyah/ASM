@@ -10,7 +10,7 @@ DASM			= ndisasm
 CC				= gcc
 LD				= ld
 ASMBFLAGS		= -I boot/include/
-ASMKFLAGS		= -f elf
+ASMKFLAGS		= -f elf -I include/
 CFLAGS			= -I include/ -m32 -c -fno-builtin -fno-stack-protector
 LDFLAGS			= -m elf_i386 -s -Ttext $(ENTRYPOINT)
 DASMFLAGS		= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
@@ -19,7 +19,7 @@ DASMFLAGS		= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 HBOOT		= boot/boot.bin boot/loader.bin
 HKERNEL		= kernel.bin
 OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
-			  lib/kliba.o lib/string.o lib/klib.o
+			  kernel/main.o lib/kliba.o lib/string.o lib/klib.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
@@ -40,7 +40,7 @@ $(HKERNEL) : $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
 # compile kernel/
-kernel/kernel.o : kernel/kernel.asm
+kernel/kernel.o : kernel/kernel.asm include/sconst.inc
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
 # we also can use "gcc -M kernel/star.c -I include/" to get dependency files
@@ -51,6 +51,9 @@ kernel/i8259.o : kernel/i8259.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/protect.o : kernel/protect.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/main.o : kernel/main.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 # compile lib

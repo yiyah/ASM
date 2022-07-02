@@ -1,5 +1,6 @@
 [section .text]
 global  memcpy
+global  memset
 
 ; ===================================
 ; @Function: eax = void *memcpy(void* es:dest, const void* es:src, size_t n);
@@ -40,5 +41,28 @@ _memcpyRet:
     pop     esi
     pop     ecx
     mov     esp, ebp
+    pop     ebp
+    ret
+
+; ===================================
+; @Function: memset(void* p_dst, u8 ch, u32 size);
+; ===================================
+memset:
+    push    ebp
+    mov     ebp, esp
+    push    eax
+    push    ecx
+    push    edi
+
+    mov     edi, [ebp+8]    ; p_dst
+    mov     al, [ebp+12]    ; ch
+    mov     ecx, [ebp+16]   ; size
+
+    cld                     ; DF=0: edi++
+    rep     stosb           ; al --> es:edi unless ecx < 0
+
+    pop     edi
+    pop     ecx
+    pop     eax
     pop     ebp
     ret

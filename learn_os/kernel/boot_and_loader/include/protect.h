@@ -20,6 +20,36 @@ typedef struct s_gate
     u16 offset_high;
 }GATE;
 
+typedef struct s_tss {
+    u32 backlink;
+    u32 esp0;   /* stack pointer to use during interrupt */
+    u32 ss0;    /*   "   segment  "  "    "        "     */
+    u32 esp1;
+    u32 ss1;
+    u32 esp2;
+    u32 ss2;
+    u32 cr3;
+    u32 eip;
+    u32 flags;
+    u32 eax;
+    u32 ecx;
+    u32 edx;
+    u32 ebx;
+    u32 esp;
+    u32 ebp;
+    u32 esi;
+    u32 edi;
+    u32 es;
+    u32 cs;
+    u32 ss;
+    u32 ds;
+    u32 fs;
+    u32 gs;
+    u32 ldt;
+    u16 trap;
+    u16 iobase; /* I/O位图基址大于或等于TSS段界限，就表示没有I/O许可位图 */
+}TSS;
+
 
 /* GDT */
 /* index of descriptor */
@@ -27,14 +57,39 @@ typedef struct s_gate
 #define INDEX_FLAT_C    1   //  | determined in loader.asm
 #define INDEX_FLAT_RW   2   //  |
 #define INDEX_VIDEO     3   // /
+#define INDEX_TSS       4
+#define INDEX_LDT_FIRST 5
 /* selector */
 #define SELECTOR_DUMMY      0           // `.
 #define SELECTOR_FLAT_C     0x08        //  | determined in loader.asm
 #define SELECTOR_FLAT_RW    0x10        //  |
 #define SELECTOR_VIDEO      (0x18+3)    // /  RPL = 3
+#define SELECTOR_TSS        0x20        // TSS
+#define SELECTOR_LDT_FIRST  0x28        // LDT
 
 #define SELECTOR_KERNEL_CS  SELECTOR_FLAT_C
 #define SELECTOR_KERNEL_DS  SELECTOR_FLAT_RW
+#define SELECTOR_KERNEL_GS  SELECTOR_VIDEO
+
+/* 每个任务有一个单独的 LDT, 每个 LDT 中的描述符个数: */
+#define LDT_SIZE        2
+
+/* 选择子类型值说明 */
+/* 其中, SA_ : Selector Attribute */
+#define SA_RPL_MASK     0xFFFC
+#define SA_RPL0         0
+#define SA_RPL1         1
+#define SA_RPL2         2
+#define SA_RPL3         3
+
+#define SA_TI_MASK      0xFFFB
+#define SA_TIG          0       /* Table Indicator */
+#define SA_TIL          4
+
+/* RPL */
+#define RPL_KRNL        SA_RPL0
+#define RPL_TASK        SA_RPL1
+#define RPL_USER        SA_RPL3
 
 /* 描述符类型值说明 */
 #define DA_32           0x4000  /* 32 位段 */
