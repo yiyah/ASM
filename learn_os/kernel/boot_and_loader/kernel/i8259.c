@@ -19,7 +19,8 @@ PUBLIC void init_8259A()
 
     // 0xFF: mask all interrupt
     // 0xFD: open keyboard interrupt
-    out_byte(I8259A_MASTER_PORTMASK, 0xFD);  /* OCW1 */
+    // 0xFE: open clock interrupt
+    out_byte(I8259A_MASTER_PORTMASK, 0xFE);  /* OCW1 */
     out_byte(I8259A_SLAVE_PORTMASK, 0xFF);   /* OCW1 */
 
 }
