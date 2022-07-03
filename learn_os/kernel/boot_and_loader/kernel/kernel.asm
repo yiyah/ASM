@@ -6,12 +6,14 @@ extern  exception_handler
 extern  spurious_irq
 extern  kernel_main
 extern  disp_str
+extern  delay
 
 ; global variable
 extern  gdt_ptr
 extern  idt_ptr
 extern  p_proc_ready
 extern  tss
+extern  k_reenter
 
 [SECTION .data]
 clock_int_msg       db  "^", 0
@@ -179,21 +181,31 @@ hwint00:                ; Interrupt routine for irq 0 (the clock).
         mov     ax, ss
         mov     ds, ax
         mov     es, ax
-        mov     esp, StackTop                   ; change to kernel stack
 
         inc     byte [gs:1*80*2+20*2]           ; for test
 
         mov     al, EOI                         ; `. reenable
         out     INT_M_CTL, al                   ; / master 8259
 
+        inc     dword [k_reenter]               ; increase when enter interrupt
+        cmp     dword [k_reenter], 0
+        jne     _RE_ENTER
+
+        mov     esp, StackTop                   ; change to kernel stack
+
+        sti
+
         push    clock_int_msg
         call    disp_str
         add     esp, 4
 
+        cli
+
         mov     esp, [p_proc_ready]             ; change to process table
         lea     eax, [esp + P_STACKTOP]         ;`. for next interrupt
         mov     dword [tss + TSS3_S_SP0], eax   ;/ will auto push ss, esp, eflags, cs, eip
-
+_RE_ENTER:
+        dec     dword [k_reenter]
         pop     gs
         pop     fs
         pop     es
