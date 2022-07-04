@@ -19,7 +19,7 @@ DASMFLAGS		= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 HBOOT		= boot/boot.bin boot/loader.bin
 HKERNEL		= kernel.bin
 OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
-			  kernel/main.o lib/kliba.o lib/string.o lib/klib.o
+			  kernel/main.o kernel/global.o lib/kliba.o lib/string.o lib/klib.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
@@ -54,6 +54,9 @@ kernel/protect.o : kernel/protect.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/main.o : kernel/main.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/global.o : kernel/global.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 # compile lib

@@ -37,8 +37,13 @@ typedef struct s_proc {
     u16             ldt_sel;
     DESCRIPTOR      ldts[LDT_SIZE];
     u32             pid;
-    char            p_name[16];
+    char            p_name[32];
 }PROCESS;
 
+typedef struct s_task {
+    task_f  initial_eip;
+    int     stacksize;
+    char    name[32];
+}TASK;
 
 #endif

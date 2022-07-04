@@ -1,6 +1,7 @@
 [section .text]
 global  memcpy
 global  memset
+global  strcpy
 
 ; ===================================
 ; @Function: eax = void *memcpy(void* es:dest, const void* es:src, size_t n);
@@ -63,6 +64,34 @@ memset:
 
     pop     edi
     pop     ecx
+    pop     eax
+    pop     ebp
+    ret
+
+; ===================================
+; @Function: char* strcpy(char* p_dst, char* p_src);
+; @retval: p_dst
+; ===================================
+strcpy:
+    push    ebp
+    mov     ebp, esp
+    push    eax
+    push    esi
+    push    edi
+
+    mov     esi, [ebp+8]    ; p_dst
+    mov     edi, [ebp+12]   ; p_src
+
+    cld                     ; DF = 0
+_strcpy_next:
+    lodsb                   ; [ds:esi] --> al
+    cmp     al, 0           ; if al = '\0'
+    je      _strcpy_exit
+    stosb                   ; al --> [es:edi]
+    jmp     _strcpy_next
+_strcpy_exit:
+    pop     edi
+    pop     esi
     pop     eax
     pop     ebp
     ret

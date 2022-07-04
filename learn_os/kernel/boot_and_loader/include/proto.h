@@ -7,6 +7,7 @@
 /* string.asm */
 PUBLIC void* memcpy(void* pDst, void* pSrc, int iSize);
 PUBLIC void memset(void* p_dst, u8 ch, u32 size);
+PUBLIC char* strcpy(char* p_dst, char* p_src);
 
 /* kliba.asm */
 PUBLIC void disp_str(char* pszInfo);
@@ -26,5 +27,7 @@ extern PUBLIC PROCESS proc_tables[NR_TASKS];
 extern PUBLIC TSS tss;
 extern PUBLIC DESCRIPTOR gdt[GDT_DESC_NUM];
 extern PUBLIC GATE idt[IDT_DESC_NUM];
+
+void TestA();
 
 #endif

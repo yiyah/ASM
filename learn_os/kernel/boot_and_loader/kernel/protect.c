@@ -142,11 +142,16 @@ PUBLIC void init_prot()
     tss.iobase = sizeof(tss);           /* 没有I/O许可位图 */
 
     /* init LDT */
-    init_Descriptor(
-        &gdt[INDEX_LDT_FIRST],
-        vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_tables[0].ldts),
-        LDT_SIZE * sizeof(DESCRIPTOR) - 1,
-        DA_LDT);
+    int i;
+    u16 selector_ldt = INDEX_LDT_FIRST << 3;
+    for (i = 0; i < NR_TASKS; i++) {
+        init_Descriptor(
+            &gdt[selector_ldt>>3],
+            vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_tables[i].ldts),
+            LDT_SIZE * sizeof(DESCRIPTOR) - 1,
+            DA_LDT);
+        selector_ldt += 1 << 3;
+    }
 }
 
 PUBLIC void exception_handler(u32 vec_no, u32 err_code, u32 eip, u32 cs, u32 eflags)
