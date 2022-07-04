@@ -6,5 +6,5 @@
 #include "global.h"
 
 
-PUBLIC TASK task_table[NR_TASKS] = {{TestA, STACK_SIZE_TESTA, "TestA"}};
-
+PUBLIC TASK task_table[NR_TASKS] = {{TestA, STACK_SIZE_TESTA, "TestA"},
+                                    {TestB, STACK_SIZE_TESTA, "TestB"}};

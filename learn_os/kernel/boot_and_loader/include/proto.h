@@ -29,5 +29,6 @@ extern PUBLIC DESCRIPTOR gdt[GDT_DESC_NUM];
 extern PUBLIC GATE idt[IDT_DESC_NUM];
 
 void TestA();
+void TestB();
 
 #endif

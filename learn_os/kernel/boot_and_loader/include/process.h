@@ -3,10 +3,12 @@
 
 
 /* Number of tasks */
-#define NR_TASKS    1
+#define NR_TASKS    2
 /* stacks of tasks */
 #define STACK_SIZE_TESTA    0x8000              /* 32KB */
-#define STACK_SIZE_TOTAL    STACK_SIZE_TESTA
+#define STACK_SIZE_TESTB    0x8000              /* 32KB */
+#define STACK_SIZE_TOTAL    (STACK_SIZE_TESTA + \
+                            STACK_SIZE_TESTB)
 
 
 typedef struct s_stackframe {

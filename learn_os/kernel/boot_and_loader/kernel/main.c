@@ -25,6 +25,19 @@ void TestA()
     return;
 }
 
+void TestB()
+{
+    int i = 0x1000;
+    while(1)
+    {
+        disp_str("B");
+        disp_hex_oneByte(i++);
+        disp_str(".");
+        delay(10);
+    }
+    return;
+}
+
 
 PUBLIC void kernel_main()
 {
