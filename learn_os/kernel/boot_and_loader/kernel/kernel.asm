@@ -7,6 +7,7 @@ extern  spurious_irq
 extern  kernel_main
 extern  disp_str
 extern  delay
+extern  clock_handler
 
 ; global variable
 extern  gdt_ptr
@@ -195,8 +196,8 @@ hwint00:                ; Interrupt routine for irq 0 (the clock).
 
         sti
 
-        push    clock_int_msg
-        call    disp_str
+        push    dword 0
+        call    clock_handler
         add     esp, 4
 
         cli

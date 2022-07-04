@@ -4,6 +4,8 @@
 #include "protect.h"
 #include "process.h"
 
+extern PROCESS* p_proc_ready;
+
 /* string.asm */
 PUBLIC void* memcpy(void* pDst, void* pSrc, int iSize);
 PUBLIC void memset(void* p_dst, u8 ch, u32 size);

@@ -19,7 +19,7 @@ void TestA()
     {
         disp_str("A");
         disp_hex_oneByte(i++);
-        disp_str(". ");
+        disp_str(".");
         delay(10);
     }
     return;
@@ -27,7 +27,7 @@ void TestA()
 
 void TestB()
 {
-    int i = 0x1000;
+    int i = 0x00;
     while(1)
     {
         disp_str("B");
