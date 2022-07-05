@@ -76,7 +76,7 @@ PUBLIC void kernel_main()
         selector_ldt += 1 << 3;
     }
 
-    k_reenter = -1;
+    k_reenter = 0;              /* the first time will self-decrement */
 
     p_proc_ready = proc_tables;
     restart();

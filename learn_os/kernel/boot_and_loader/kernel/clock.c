@@ -9,6 +9,12 @@
 PUBLIC void clock_handler(u32 irq)
 {
     disp_str("#");
+
+    if (k_reenter != 0) {
+        disp_str("!");
+        return;
+    }
+
     p_proc_ready++;
     if (p_proc_ready >= proc_tables + NR_TASKS)
     {
