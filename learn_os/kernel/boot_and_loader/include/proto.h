@@ -10,6 +10,8 @@ extern PROCESS* p_proc_ready;
 PUBLIC void* memcpy(void* pDst, void* pSrc, int iSize);
 PUBLIC void memset(void* p_dst, u8 ch, u32 size);
 PUBLIC char* strcpy(char* p_dst, char* p_src);
+void disable_irq(u32 irq);
+void enable_irq(u32 irq);
 
 /* kliba.asm */
 PUBLIC void disp_str(char* pszInfo);
@@ -17,8 +19,12 @@ PUBLIC void disp_color_str(char* pszInfo, u8 color);
 PUBLIC void out_byte(u16 port, u8 value);
 PUBLIC u8   in_byte(u16 port);
 
-PUBLIC void init_prot();
+/* i8259.c */
 PUBLIC void init_8259A();
+PUBLIC void spurious_irq(u32 irq);
+PUBLIC void put_irq_handler(u32 irq, irq_handler handler);
+
+PUBLIC void init_prot();
 PUBLIC void disp_hex_oneByte(u8 hex);
 PUBLIC void disp_hex_fourByte(u32 hex);
 PUBLIC void restart();
@@ -32,5 +38,8 @@ extern PUBLIC GATE idt[IDT_DESC_NUM];
 
 void TestA();
 void TestB();
+
+/* clock.c */
+PUBLIC void clock_handler(u32 irq);
 
 #endif

@@ -15,6 +15,7 @@ extern  idt_ptr
 extern  p_proc_ready
 extern  tss
 extern  k_reenter
+extern  irq_table
 
 [SECTION .data]
 clock_int_msg       db  "^", 0
@@ -164,36 +165,27 @@ exception:
 ; ===================================
 ; ---------------------------------
 %macro  hwint_master    1
-        push    dword %1
-        call    spurious_irq
-        add     esp, 4
-        hlt
+    call    save
+    in      al, INT_M_CTLMASK               ; `.
+    or      al, (1 << %1)                   ;  | No more current interruption are allowed
+    out     INT_M_CTLMASK, al               ; /
+    mov     al, EOI                         ; `. reenable
+    out     INT_M_CTL, al                   ; / master 8259
+    sti
+    push    dword %1
+    call    [irq_table + 4 * %1]            ; interrupt handler
+    add     esp, 4
+    cli
+    in      al, INT_M_CTLMASK               ; `.
+    and     al, ~(1 << %1)                  ;  | Allow interruption again
+    out     INT_M_CTLMASK, al               ; / because we had handlered once
+    ret                                     ; jmp to restar of restar_reenter
 %endmacro
 ; ---------------------------------
 
 ALIGN   16
 hwint00:                ; Interrupt routine for irq 0 (the clock).
-    call    save
-
-    in      al, INT_M_CTLMASK               ; `.
-    or      al, 1                           ;  | No more time clock interruptions are allowed
-    out     INT_M_CTLMASK, al               ; /
-
-    mov     al, EOI                         ; `. reenable
-    out     INT_M_CTL, al                   ; / master 8259
-
-    sti
-    push    dword 0
-    call    clock_handler
-    add     esp, 4
-    cli
-
-    in      al, INT_M_CTLMASK               ; `.
-    and     al, 0xFE                        ;  | Allow time interruption again
-    out     INT_M_CTLMASK, al               ; / because we had handlered once
-
-    ret
-
+        hwint_master    0
 
 ALIGN   16
 hwint01:                ; Interrupt routine for irq 1 (keyboard)

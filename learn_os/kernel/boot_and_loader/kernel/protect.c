@@ -2,7 +2,7 @@
 #include "const.h"
 #include "proto.h"
 #include "protect.h"
-
+#include "global.h"
 
 
 /* 线性地址 → 物理地址 */

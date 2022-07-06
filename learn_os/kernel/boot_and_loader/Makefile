@@ -64,7 +64,7 @@ kernel/clock.o : kernel/clock.c include/*
 
 # compile lib
 lib/kliba.o : lib/kliba.asm
-	$(ASM) -f elf -o $@ $<
+	$(ASM) $(ASMKFLAGS) -o $@ $<
 
 lib/string.o : lib/string.asm
 	$(ASM) -f elf -o $@ $<
