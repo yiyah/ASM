@@ -18,7 +18,7 @@ void TestA()
     while(1)
     {
         disp_str("A");
-        disp_hex_oneByte(i++);
+        disp_hex_oneByte(get_ticks());
         disp_str(".");
         delay(10);
     }
@@ -77,7 +77,7 @@ PUBLIC void kernel_main()
     }
 
     k_reenter = 0;              /* the first time will self-decrement */
-
+    ticks = 0;
 
     put_irq_handler(CLOCK_IRQ, clock_handler); /* 设定时钟中断处理程序 */
     enable_irq(CLOCK_IRQ);                     /* 让8259A可以接收时钟中断 */

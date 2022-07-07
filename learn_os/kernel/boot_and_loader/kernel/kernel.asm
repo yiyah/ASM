@@ -16,6 +16,7 @@ extern  p_proc_ready
 extern  tss
 extern  k_reenter
 extern  irq_table
+extern  sys_call_table
 
 [SECTION .data]
 clock_int_msg       db  "^", 0
@@ -59,6 +60,7 @@ global  hwint13
 global  hwint14
 global  hwint15
 global  restart
+global  sys_call
 
 ; ===================================
 ; @Function: _start
@@ -272,7 +274,7 @@ save:
     mov     ds, ax
     mov     es, ax
 
-    mov     eax, esp                        ; esp is point to process table
+    mov     esi, esp                        ; esp is point to process table
 
     inc     dword [k_reenter]               ; increase when enter interrupt
     cmp     dword [k_reenter], 0
@@ -281,10 +283,10 @@ save:
     mov     esp, StackTop                   ; change to kernel stack
 
     push    restart
-    jmp     [eax + RETADR - P_STACKBASE]        ; exit save()
+    jmp     [esi + RETADR - P_STACKBASE]        ; exit save()
 _RE_ENTER:
     push    restar_reenter
-    jmp     [eax + RETADR - P_STACKBASE]        ; exit save()
+    jmp     [esi + RETADR - P_STACKBASE]        ; exit save()
 
 ; ===================================
 ; @Function: restart
@@ -306,3 +308,14 @@ restar_reenter:
     add     esp, 4
 
     iretd
+
+; ===================================
+; @Function: sys_call
+; ===================================
+sys_call:
+    call    save
+    sti
+    call    [sys_call_table + eax * 4]
+    mov     [esi + EAXREG - P_STACKBASE], eax   ; return value
+    cli
+    ret

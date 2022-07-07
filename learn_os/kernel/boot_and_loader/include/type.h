@@ -8,5 +8,6 @@ typedef unsigned int        u32;
 typedef void (*int_handler) ();
 typedef void (*task_f) ();
 typedef void (*irq_handler) (u32 irq);
+typedef void* system_call;
 
 #endif /* __TYPE_H_ */

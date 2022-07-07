@@ -36,10 +36,18 @@ extern PUBLIC TSS tss;
 extern PUBLIC DESCRIPTOR gdt[GDT_DESC_NUM];
 extern PUBLIC GATE idt[IDT_DESC_NUM];
 
+/* main.c */
 void TestA();
 void TestB();
 
 /* clock.c */
 PUBLIC void clock_handler(u32 irq);
+
+/* proc.c */
+PUBLIC u32 sys_get_ticks();
+
+/* syscall.asm */
+PUBLIC void sys_call();
+PUBLIC u32 get_ticks();
 
 #endif
