@@ -270,9 +270,9 @@ save:
     push    es      ; | save register for process which be interrupted
     push    fs      ; |
     push    gs      ;/
-    mov     ax, ss
-    mov     ds, ax
-    mov     es, ax
+    mov     dx, ss
+    mov     ds, dx
+    mov     es, dx
 
     mov     esi, esp                        ; esp is point to process table
 
