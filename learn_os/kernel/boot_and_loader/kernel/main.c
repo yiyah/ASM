@@ -17,27 +17,28 @@ void TestA()
     int i = 0;
     while(1)
     {
-        disp_str("A");
-        disp_hex_oneByte(get_ticks());
-        disp_str(".");
-        milli_delay(1000);
+        disp_str("A.");
+        milli_delay(300);
     }
-    return;
 }
 
 void TestB()
 {
-    int i = 0x00;
     while(1)
     {
-        disp_str("B");
-        disp_hex_oneByte(i++);
-        disp_str(".");
-        delay(10);
+        disp_str("B.");
+        milli_delay(900);
     }
-    return;
 }
 
+void TestC()
+{
+    while(1)
+    {
+        disp_str("C.");
+        milli_delay(1500);
+    }
+}
 
 PUBLIC void kernel_main()
 {

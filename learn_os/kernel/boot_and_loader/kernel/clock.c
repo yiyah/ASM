@@ -8,12 +8,10 @@
 
 PUBLIC void clock_handler(u32 irq)
 {
-    disp_str("#");
     ticks++;
 
     if (k_reenter != 0) {
         /* reenter */
-        disp_str("!");
         return;
     }
 

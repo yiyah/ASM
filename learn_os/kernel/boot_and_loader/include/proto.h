@@ -39,6 +39,7 @@ extern PUBLIC GATE idt[IDT_DESC_NUM];
 /* main.c */
 void TestA();
 void TestB();
+void TestC();
 
 /* clock.c */
 PUBLIC void clock_handler(u32 irq);
