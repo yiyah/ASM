@@ -18,6 +18,15 @@
 #define I8259A_SLAVE_PORT        0xA0
 #define I8259A_SLAVE_PORTMASK    0xA1
 
+/* 8253/8254 PIT (Programmable Interval Timer) */
+#define TIMER0_PORT     0x40 /* I/O port for timer channel 0 */
+#define TIMER_MODE_PORT 0x43 /* I/O port for timer mode control */
+#define RATE_GENERATOR  0x34 /* 00-11-010-0 :
+                             * Counter0 - LSB then MSB - rate generator - binary
+                             */
+#define TIMER_FREQ      1193182L /* clock frequency for timer in PC and AT */
+#define HZ              100      /* clock freq (software settable on IBM-PC) */
+
 /* Hardware interrupts */
 #define NR_IRQ          16  /* Number of IRQs */
 #define CLOCK_IRQ       0
