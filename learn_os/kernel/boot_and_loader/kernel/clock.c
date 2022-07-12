@@ -6,21 +6,26 @@
 #include "global.h"
 
 
+/**
+  * @brief  called by hwint_master
+  * @param  irq: it must 0
+  * @retval None
+  */
 PUBLIC void clock_handler(u32 irq)
 {
     ticks++;
+    p_proc_ready->ticks--;
 
     if (k_reenter != 0) {
         /* reenter */
         return;
     }
 
-    p_proc_ready++;
-    if (p_proc_ready >= proc_tables + NR_TASKS)
-    {
-        p_proc_ready = proc_tables;
+    if ( p_proc_ready->ticks > 0) {
+        return;
     }
-    return;
+
+    schedule();
 }
 
 

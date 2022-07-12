@@ -46,6 +46,7 @@ PUBLIC void clock_handler(u32 irq);
 PUBLIC void milli_delay(u32 milli_sec);
 
 /* proc.c */
+PUBLIC void schedule();
 PUBLIC u32 sys_get_ticks();
 
 /* syscall.asm */
