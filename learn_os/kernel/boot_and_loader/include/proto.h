@@ -41,6 +41,8 @@ PUBLIC void delay(u16 timef);
 
 /* main.c */
 extern PUBLIC PROCESS proc_tables[NR_TASKS];
+
+/* start.c */
 extern PUBLIC TSS tss;
 extern PUBLIC DESCRIPTOR gdt[GDT_DESC_NUM];
 extern PUBLIC GATE idt[IDT_DESC_NUM];
@@ -58,5 +60,7 @@ PUBLIC void milli_delay(u32 milli_sec);
 PUBLIC void schedule();
 PUBLIC u32 sys_get_ticks();
 
+/* keyboard.c */
+PUBLIC void init_keyboard();
 
 #endif
