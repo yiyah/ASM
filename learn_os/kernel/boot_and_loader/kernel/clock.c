@@ -22,6 +22,7 @@ PUBLIC void clock_handler(u32 irq)
     }
 
     if ( p_proc_ready->ticks > 0) {
+        /* run high priority process until ticks=0 */
         return;
     }
 
