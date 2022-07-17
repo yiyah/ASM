@@ -20,6 +20,7 @@ PRIVATE int bNum_lock;      /* Num Lock          */
 PRIVATE int bScroll_lock;   /* Scroll Lock       */
 PRIVATE int column;
 
+PRIVATE u8 get_byte_from_kbuf();
 
 /**
   * @brief  called by hwint_master
@@ -62,30 +63,60 @@ PUBLIC void init_keyboard()
 PUBLIC void keyboard_read()
 {
     u8 scan_code;
-    char output[2] = {0};
-    int b_make;         /* TURE: makeCode;  FALSE: breakCode*/
-    u32 key = 0;        /* for save the key value */
+    int b_make;         /* TURE: makeCode;  FALSE: breakCode */
+    u32 key = 0;        /* for save the key value: Hight 8B is flag */
     u32* keyrow;
 
     if (kb_in.count > 0) {
-        disable_int();
-        scan_code = *(kb_in.p_tail);
-        kb_in.p_tail++;             /* point to the next byte to read */
-        if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
-            /* point to head if exceed the buffer size */
-            kb_in.p_tail = kb_in.buf;
-        }
-        kb_in.count--;
-        enable_int();
+        bE0 = FALSE;
+
+        scan_code = get_byte_from_kbuf();
 
         /* parse scan code */
         if (0xE1 == scan_code) {
-            // do nothing now
+            /* deal PAUSE key */
+            u8 i;
+            u8 pausebrk_scode[] = {0xE1, 0x1D, 0x45,
+                                   0xE1, 0x9D, 0xC5};
+            int bPausebreak = TRUE;
+            for(i = 1;i < 6;i++){
+                if (get_byte_from_kbuf() != pausebrk_scode[i]) {
+                    bPausebreak = FALSE;
+                    break;
+                }
+            }
+            if (bPausebreak) {
+                key = PAUSEBREAK;
+            }
         }
         else if (0xE0 == scan_code) {
-            bE0 = TRUE;
+            /* deal PrintScreen key */
+            scan_code = get_byte_from_kbuf();
+
+            /* press PrintScreen */
+            if (0x2A == scan_code) {
+                if (0xE0 == get_byte_from_kbuf()) {
+                    if (0x37 == get_byte_from_kbuf()) {
+                        key = PRINTSCREEN;
+                        b_make = TRUE;
+                    }
+                }
+            }
+            /* release PrintScreen */
+            if (0xB7 == scan_code) {
+                if (0xE0 == get_byte_from_kbuf()) {
+                    if (0xAA == get_byte_from_kbuf()) {
+                        key = PRINTSCREEN;
+                        b_make = FALSE;
+                    }
+                }
+            }
+            /* 不是PrintScreen, 此时 scan_code 为 0xE0 紧跟的那个值. */
+            if (0 == key) {
+                bE0 = TRUE;
+            }
         }
-        else {
+        if ((key != PAUSEBREAK) && (key != PRINTSCREEN)) {
             /* Determine whether to press or release the keyboard */
             b_make = (scan_code & FLAG_BREAK ? FALSE : TRUE);
 
@@ -111,42 +142,62 @@ PUBLIC void keyboard_read()
                  */
             case SHIFT_L:
                 bShift_l = b_make;
-                key = 0;
                 break;
             case SHIFT_R:
                 bShift_r = b_make;
-                key = 0;                
                 break;
             case CTRL_L:
                 bCtrl_l = b_make;
-                key = 0;
                 break;
             case CTRL_R:
                 bCtrl_r = b_make;
-                key = 0;
                 break;            
             case ALT_L:
                 bAlt_l = b_make;
-                key = 0;
                 break;
             case ALT_R:
                 bAlt_r = b_make;
-                key = 0;
                 break;
             default:
-                if (!b_make) {
-                    /* reset key if realease the key */
-                    key = 0;
-                }
                 break;
             }
 
-            if (key)
+            if (b_make)
             {
-                /* It is a printable character if key != 0 */
-                output[0] = key;
-                disp_str(output);
+                /* only deal when press */
+                /* reset key if press SHIFT, CTRL and ALT */
+                key |= bShift_l  ? FLAG_SHIFT_L  : 0;
+                key |= bShift_r  ? FLAG_SHIFT_R  : 0;
+                key |= bCtrl_l   ? FLAG_CTRL_L   : 0;
+                key |= bCtrl_r   ? FLAG_CTRL_R   : 0;
+                key |= bAlt_l    ? FLAG_ALT_L    : 0;
+                key |= bAlt_r    ? FLAG_ALT_R    : 0;
+
+                in_process(key);
             }
         }
     }
+}
+
+
+/**
+  * @brief  read next byte from kb_in.buf
+  * @retval scan_code
+  */
+PRIVATE u8 get_byte_from_kbuf()
+{
+    u8 scan_code;
+
+    while (kb_in.count <= 0) {}   /* 等待下一个字节到来 */
+
+    disable_int();
+    scan_code = *(kb_in.p_tail);
+    kb_in.p_tail++;
+    if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
+            kb_in.p_tail = kb_in.buf;
+    }
+    kb_in.count--;
+    enable_int();
+
+    return scan_code;
 }

@@ -58,8 +58,8 @@
 #define F12         (0x1C + FLAG_EXT)       /* F12 */
 
 /* Control Pad */
-#define PRINTS      (0x1D + FLAG_EXT)       /* Print Screen */
-#define PAUSEB      (0x1E + FLAG_EXT)       /* Pause/Break  */
+#define PRINTSCREEN (0x1D + FLAG_EXT)       /* Print Screen */
+#define PAUSEBREAK  (0x1E + FLAG_EXT)       /* Pause/Break  */
 #define INSERT      (0x1F + FLAG_EXT)       /* Insert       */
 #define DELETE      (0x20 + FLAG_EXT)       /* Delete       */
 #define HOME        (0x21 + FLAG_EXT)       /* Home         */
