@@ -1,5 +1,7 @@
 #include "type.h"
 #include "const.h"
+#include "protect.h"
+#include "process.h"
 #include "proto.h"
 #include "keyboard.h"
 
@@ -40,7 +42,7 @@ PUBLIC void keyboard_read()
 {
     u8 scan_code;
     if (kb_in.count > 0) {
-        //disable_int();
+        disable_int();
         scan_code = *(kb_in.p_tail);
         kb_in.p_tail++;             /* point to the next byte to read */
         if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES) {
@@ -48,7 +50,7 @@ PUBLIC void keyboard_read()
             kb_in.p_tail = kb_in.buf;
         }
         kb_in.count--;
-        //enable_int();
+        enable_int();
         disp_hex_oneByte(scan_code);
     }
 }

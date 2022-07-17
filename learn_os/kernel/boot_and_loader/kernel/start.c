@@ -1,6 +1,7 @@
 #include "const.h"
 #include "type.h"
 #include "protect.h"
+#include "process.h"
 #include "proto.h"
 
 /* GDT */

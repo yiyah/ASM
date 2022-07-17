@@ -1,10 +1,6 @@
 #ifndef __PROTO_H_
 #define __PROTO_H_
 
-#include "protect.h"
-#include "process.h"
-
-extern PROCESS* p_proc_ready;
 
 /* string.asm */
 PUBLIC void* memcpy(void* pDst, void* pSrc, int iSize);
@@ -42,6 +38,7 @@ PUBLIC void disp_hex_fourByte(u32 hex);
 PUBLIC void delay(u16 timef);
 
 /* main.c */
+extern PROCESS* p_proc_ready;
 extern PUBLIC PROCESS proc_tables[NR_TASKS];
 
 /* start.c */
