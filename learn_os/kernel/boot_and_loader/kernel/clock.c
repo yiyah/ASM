@@ -29,6 +29,17 @@ PUBLIC void clock_handler(u32 irq)
     schedule();
 }
 
+PUBLIC void init_clock()
+{
+    /* init 8253 PIT */
+    /* set clock frequency with macro: HZ */
+    out_byte(TIMER_MODE_PORT, RATE_GENERATOR);
+    out_byte(TIMER0_PORT, (u8)(TIMER_FREQ/HZ));
+    out_byte(TIMER0_PORT, (u8)((TIMER_FREQ/HZ)>>8));
+
+    put_irq_handler(CLOCK_IRQ, clock_handler); /* 设定时钟中断处理程序 */
+    enable_irq(CLOCK_IRQ);                     /* 让8259A可以接收时钟中断 */
+}
 
 /**
   * @brief  delay by using clock interrupt

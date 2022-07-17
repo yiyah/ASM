@@ -86,15 +86,8 @@ PUBLIC void kernel_main()
 
     p_proc_ready = proc_tables;
 
-    /* init 8253 PIT */
-    out_byte(TIMER_MODE_PORT, RATE_GENERATOR);
-    out_byte(TIMER0_PORT, (u8)(TIMER_FREQ/HZ));
-    out_byte(TIMER0_PORT, (u8)((TIMER_FREQ/HZ)>>8));
-
-    put_irq_handler(CLOCK_IRQ, clock_handler); /* 设定时钟中断处理程序 */
-    enable_irq(CLOCK_IRQ);                     /* 让8259A可以接收时钟中断 */
-
-    init_keyboard();
+    init_clock();               /* init and open clock interrupt */
+    init_keyboard();            /* init and open keyboard interrupt */
 
     restart();
 

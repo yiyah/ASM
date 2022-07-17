@@ -54,6 +54,7 @@ void TestC();
 
 /* clock.c */
 PUBLIC void clock_handler(u32 irq);
+PUBLIC void init_clock();
 PUBLIC void milli_delay(u32 milli_sec);
 
 /* process.c */
