@@ -18,6 +18,8 @@ PUBLIC void out_byte(u16 port, u8 value);
 PUBLIC u8   in_byte(u16 port);
 PUBLIC void disable_irq(u32 irq);
 PUBLIC void enable_irq(u32 irq);
+PUBLIC void enable_int();
+PUBLIC void disable_int();
 
 /* syscall.asm */
 PUBLIC void sys_call();
@@ -63,5 +65,9 @@ PUBLIC u32 sys_get_ticks();
 
 /* keyboard.c */
 PUBLIC void init_keyboard();
+PUBLIC void keyboard_read();
+
+/* tty.c */
+PUBLIC void task_tty();
 
 #endif

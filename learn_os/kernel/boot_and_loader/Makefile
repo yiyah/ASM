@@ -20,7 +20,8 @@ HBOOT		= boot/boot.bin boot/loader.bin
 HKERNEL		= kernel.bin
 OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
 			  kernel/main.o kernel/global.o kernel/clock.o kernel/process.o \
-			  kernel/syscall.o kernel/keyboard.o lib/kliba.o lib/string.o lib/klib.o
+			  kernel/syscall.o kernel/keyboard.o kernel/tty.o \
+			  lib/kliba.o lib/string.o lib/klib.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
@@ -70,6 +71,9 @@ kernel/syscall.o : kernel/syscall.asm include/sconst.inc
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
 kernel/keyboard.o : kernel/keyboard.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/tty.o : kernel/tty.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 # compile lib
