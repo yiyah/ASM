@@ -1,3 +1,9 @@
+/********************************************************************/
+/*  "scan code" <--> "key" map.                                     */
+/*  It should be and can only be included by keyboard.c!            */
+/*  copy from ORANGE (chapter7/c)                                   */
+/********************************************************************/
+
 #ifndef __KEYMAP_H_
 #define __KEYMAP_H_
 

@@ -4,6 +4,10 @@
 #define PUBLIC          /* PUBLIC is the opposite of PRIVATE */
 #define PRIVATE static  /* PRIVATE x limits the scope of x */
 
+/* Boolean */
+#define TRUE    1
+#define FALSE   0
+
 #define GDT_DESC_NUM 128
 #define IDT_DESC_NUM 256
 
