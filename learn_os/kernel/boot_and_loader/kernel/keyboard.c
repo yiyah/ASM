@@ -169,7 +169,6 @@ PUBLIC void keyboard_read()
             if (b_make)
             {
                 /* only deal when press */
-                /* reset key if press SHIFT, CTRL and ALT */
                 key |= bShift_l  ? FLAG_SHIFT_L  : 0;
                 key |= bShift_r  ? FLAG_SHIFT_R  : 0;
                 key |= bCtrl_l   ? FLAG_CTRL_L   : 0;
