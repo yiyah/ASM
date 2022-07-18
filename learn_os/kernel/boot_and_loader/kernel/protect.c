@@ -9,8 +9,6 @@
 /* 线性地址 → 物理地址 */
 #define vir2phys(seg_base, vir) (u32)(((u32)seg_base) + (u32)(vir))
 
-extern u32 disp_pos;
-
 /* interrupt handler */
 void divide_error();
 void single_step_exception();

@@ -2,6 +2,7 @@
 #include "const.h"
 #include "protect.h"
 #include "process.h"
+#include "global.h"
 #include "proto.h"
 
 
@@ -48,4 +49,13 @@ PUBLIC void delay(u16 time)
             for (j = 0; j < 10000; j++) {}
         }
     }
+}
+
+PUBLIC void ClearScreen()
+{
+    int i;
+    for (i = 0, disp_pos = 0; i < 2000; i++) {
+        disp_str(" ");
+    }
+    disp_pos = 0;
 }

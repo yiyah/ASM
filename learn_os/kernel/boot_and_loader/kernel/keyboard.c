@@ -2,6 +2,7 @@
 #include "const.h"
 #include "protect.h"
 #include "process.h"
+#include "global.h"
 #include "proto.h"
 #include "keyboard.h"
 #include "keymap.h"
@@ -21,6 +22,8 @@ PRIVATE int bScroll_lock;   /* Scroll Lock       */
 PRIVATE int column;
 
 PRIVATE u8 get_byte_from_kbuf();
+PRIVATE void resetCursor();
+
 
 /**
   * @brief  called by hwint_master
@@ -49,6 +52,7 @@ PUBLIC void init_keyboard()
     kb_in.count = 0;
     kb_in.p_tail = kb_in.p_head = kb_in.buf;
 
+    resetCursor();
     put_irq_handler(KEYBOARD_IRQ, keyboard_handler);
     enable_irq(KEYBOARD_IRQ);
 }
@@ -200,4 +204,12 @@ PRIVATE u8 get_byte_from_kbuf()
     enable_int();
 
     return scan_code;
+}
+
+PRIVATE void resetCursor()
+{
+    out_byte(CRTC_ADDR_REG, CURSOR_H);
+    out_byte(CRTC_DATA_REG, ((disp_pos/2)>>8)&0xFF);
+    out_byte(CRTC_ADDR_REG, CURSOR_L);
+    out_byte(CRTC_DATA_REG, (disp_pos/2)&0xFF);
 }

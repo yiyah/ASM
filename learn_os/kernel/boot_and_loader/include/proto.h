@@ -36,6 +36,7 @@ PUBLIC void init_prot();
 PUBLIC void disp_hex_oneByte(u8 hex);
 PUBLIC void disp_hex_fourByte(u32 hex);
 PUBLIC void delay(u16 timef);
+PUBLIC void ClearScreen();
 
 /* main.c */
 extern PROCESS* p_proc_ready;
