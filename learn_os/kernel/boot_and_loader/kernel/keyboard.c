@@ -2,6 +2,8 @@
 #include "const.h"
 #include "protect.h"
 #include "process.h"
+#include "tty.h"
+#include "console.h"
 #include "global.h"
 #include "proto.h"
 #include "keyboard.h"
@@ -64,7 +66,7 @@ PUBLIC void init_keyboard()
   * @param  irq: it must 1
   * @retval None
   */
-PUBLIC void keyboard_read()
+PUBLIC void keyboard_read(TTY* p_tty)
 {
     u8 scan_code;
     int b_make;         /* TURE: makeCode;  FALSE: breakCode */
@@ -176,7 +178,7 @@ PUBLIC void keyboard_read()
                 key |= bAlt_l    ? FLAG_ALT_L    : 0;
                 key |= bAlt_r    ? FLAG_ALT_R    : 0;
 
-                in_process(key);
+                in_process(p_tty, key);
             }
         }
     }

@@ -2,6 +2,7 @@
 #include "type.h"
 #include "protect.h"
 #include "process.h"
+#include "tty.h"
 #include "proto.h"
 
 /* GDT */

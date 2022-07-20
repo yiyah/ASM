@@ -16,6 +16,9 @@
 #define PRIVILEGE_TASK  1
 #define PRIVILEGE_USER  3
 
+/* TTY */
+#define NR_CONSOLES     3
+
 /* define I8259A interrupt controllers ports */
 #define I8259A_MASTER_PORT       0x20
 #define I8259A_MASTER_PORTMASK   0x21
