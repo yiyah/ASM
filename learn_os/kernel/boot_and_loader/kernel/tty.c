@@ -24,7 +24,7 @@ PUBLIC void task_tty()
     for (p_tty = tty_table;p_tty < TTY_END;p_tty++) {
         init_tty(p_tty);
     }
-    nr_current_console = 0;
+    select_console(0);
 
     while (1) {
         for (p_tty = TTY_FIRST;p_tty < TTY_END;p_tty++) {
@@ -40,8 +40,7 @@ PRIVATE void init_tty(TTY* p_tty)
     p_tty->inbuf_count = 0;
     p_tty->p_inbuf_head = p_tty->p_inbuf_tail = p_tty->in_buf;
 
-    int nr_tty = p_tty - tty_table;
-    p_tty->p_console = console_table + nr_tty;
+    init_screen(p_tty);
 }
 
 
@@ -91,6 +90,21 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                 enable_int();
             }
             break;
+        case F1:
+        case F2:
+        case F3:
+        case F4:
+        case F5:
+        case F6:
+        case F7:
+        case F8:
+        case F9:
+        case F10:
+        case F11:
+        case F12:
+            if ((FLAG_ALT_L & key) || (FLAG_ALT_R & key)) {
+                select_console(raw_code - F1);
+            }
         default:
             break;
         }

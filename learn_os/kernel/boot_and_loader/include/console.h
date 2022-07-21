@@ -13,7 +13,9 @@ typedef struct s_console
 
 #define DEFAULT_CHAR_COLOR  0x07        /* 0000 0111 黑底白字 */
 
+PUBLIC void init_screen(TTY* p_tty);
 PUBLIC int is_current_console(CONSOLE* p_con);
 PUBLIC void out_char(CONSOLE* p_con, char ch);
+PUBLIC void select_console(int nr_console);
 
 #endif
