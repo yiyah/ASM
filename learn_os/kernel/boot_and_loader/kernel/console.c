@@ -93,3 +93,30 @@ PUBLIC void select_console(int nr_console)
     set_cursor(console_table[nr_console].cursor);
     set_video_start_addr(console_table[nr_console].current_start_addr);
 }
+
+
+/**
+  * @brief  scroll screen
+  * @param  direction:  SCR_UP  : 向上滚屏
+  *                     SCR_DN  : 向下滚屏
+  *                     others  : 不做处理
+  */
+PUBLIC void scroll_screen(CONSOLE* p_con, int direction)
+{
+    if (direction == SCR_UP) {
+        if (p_con->current_start_addr > p_con->original_addr) {
+            p_con->current_start_addr -= SCREEN_WIDTH;
+        }
+    }
+    else if (direction == SCR_DN) {
+        if (p_con->current_start_addr + SCREEN_SIZE <
+            p_con->original_addr + p_con->v_mem_limit) {
+            p_con->current_start_addr += SCREEN_WIDTH;
+        }
+    }
+    else{
+    }
+
+    set_video_start_addr(p_con->current_start_addr);
+    set_cursor(p_con->cursor);
+}

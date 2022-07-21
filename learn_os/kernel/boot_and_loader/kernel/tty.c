@@ -68,12 +68,7 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                 nextRow = 63;   /* the bottom row */
             }
             if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-                disable_int();
-                out_byte(CRTC_ADDR_REG, START_ADDR_H);
-                out_byte(CRTC_DATA_REG, ((80*nextRow) >> 8) & 0xFF);
-                out_byte(CRTC_ADDR_REG, START_ADDR_L);
-                out_byte(CRTC_DATA_REG, (80*nextRow) & 0xFF);
-                enable_int();
+                scroll_screen(p_tty->p_console, SCR_DN);
             }
             break;
         case DOWN:
@@ -81,13 +76,7 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
                 nextRow = 0;    /* the top row */
             }
             if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-                /* Shift+Down, do nothing */
-                disable_int();
-                out_byte(CRTC_ADDR_REG, START_ADDR_H);
-                out_byte(CRTC_DATA_REG, ((80*nextRow) >> 8) & 0xFF);
-                out_byte(CRTC_ADDR_REG, START_ADDR_L);
-                out_byte(CRTC_DATA_REG, (80*nextRow) & 0xFF);
-                enable_int();
+                scroll_screen(p_tty->p_console, SCR_UP);
             }
             break;
         case F1:

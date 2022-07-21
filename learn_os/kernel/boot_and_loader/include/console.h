@@ -13,9 +13,18 @@ typedef struct s_console
 
 #define DEFAULT_CHAR_COLOR  0x07        /* 0000 0111 黑底白字 */
 
+#define SCR_UP      1   /* scroll forward */
+#define SCR_DN      -1  /* scroll backward */
+
+#define SCREEN_SIZE     (80 * 25)
+#define SCREEN_WIDTH    80
+
+
 PUBLIC void init_screen(TTY* p_tty);
 PUBLIC int is_current_console(CONSOLE* p_con);
 PUBLIC void out_char(CONSOLE* p_con, char ch);
 PUBLIC void select_console(int nr_console);
+PUBLIC void scroll_screen(CONSOLE* p_con, int direction);
+
 
 #endif
