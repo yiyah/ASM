@@ -44,7 +44,7 @@ void TestC()
 
 PUBLIC void kernel_main()
 {
-    ClearScreen();
+    ClearScreen();      /* just for show cursor */
     disp_str("--------kernel main begins--------\n");
 
     PROCESS* p_proc = proc_tables;

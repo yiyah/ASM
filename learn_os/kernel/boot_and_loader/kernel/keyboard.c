@@ -23,9 +23,13 @@ PRIVATE int bNum_lock;      /* Num Lock          */
 PRIVATE int bScroll_lock;   /* Scroll Lock       */
 PRIVATE int column;
 
+PRIVATE int bCaps_lock;     /* Caps Lock         */
+PRIVATE int bNum_lock;      /* Num Lock          */
+PRIVATE int bScroll_lock;   /* Scroll Lock       */
+
 PRIVATE u8 get_byte_from_kbuf();
 PRIVATE void resetCursor();
-
+PRIVATE void set_leds();
 
 /**
   * @brief  called by hwint_master
@@ -54,7 +58,14 @@ PUBLIC void init_keyboard()
     kb_in.count = 0;
     kb_in.p_tail = kb_in.p_head = kb_in.buf;
 
-    resetCursor();
+    bShift_l = bShift_r = 0;
+    bAlt_l   = bAlt_r   = 0;
+    bCtrl_l  = bCtrl_r  = 0;
+
+    bCaps_lock   = 0;
+    bNum_lock    = 1;
+    bScroll_lock = 0;
+
     put_irq_handler(KEYBOARD_IRQ, keyboard_handler);
     enable_irq(KEYBOARD_IRQ);
 }
@@ -130,14 +141,20 @@ PUBLIC void keyboard_read(TTY* p_tty)
             keyrow = &keymap[(scan_code&0x7F) * MAP_COLS];
             
             column = 0;                 /* default is the first column */
-            if (bShift_l || bShift_r)
+
+            int bCaps = bShift_l || bShift_r;
+            if (bCaps_lock) {
+                if ((keyrow[0] >= 'a') && (keyrow[0] <= 'z')) {
+                    bCaps = !bCaps;
+                }
+            }
+            if (bCaps)
             {
                 column = 1;             /* press the SHIFT */
             }
             if (bE0)
             {
                 column = 2;
-                bE0 = FALSE;
             }
 
             key = keyrow[column];
@@ -164,12 +181,100 @@ PUBLIC void keyboard_read(TTY* p_tty)
             case ALT_R:
                 bAlt_r = b_make;
                 break;
+            case CAPS_LOCK:
+                if (b_make) {
+                    bCaps_lock   = !bCaps_lock;
+                    set_leds();
+                }
+                break;
+            case NUM_LOCK:
+                if (b_make) {
+                    bNum_lock    = !bNum_lock;
+                    set_leds();
+                }
+                break;
+            case SCROLL_LOCK:
+                if (b_make) {
+                    bScroll_lock = !bScroll_lock;
+                    set_leds();
+                }
+                break;
             default:
                 break;
             }
 
-            if (b_make)
+            if (b_make) /* ignore Break Code */
             {
+                int pad = 0;
+
+                /* 首先处理小键盘 */
+                if ((key >= PAD_SLASH) && (key <= PAD_9)) {
+                    pad = 1;
+                    switch(key) {
+                    case PAD_SLASH:
+                        key = '/';
+                        break;
+                    case PAD_STAR:
+                        key = '*';
+                        break;
+                    case PAD_MINUS:
+                        key = '-';
+                        break;
+                    case PAD_PLUS:
+                        key = '+';
+                        break;
+                    case PAD_ENTER:
+                        key = ENTER;
+                        break;
+                    default:
+                        if (bNum_lock &&
+                            (key >= PAD_0) &&
+                            (key <= PAD_9)) {
+                            key = key - PAD_0 + '0';
+                        }
+                        else if (bNum_lock &&
+                             (key == PAD_DOT)) {
+                            key = '.';
+                        }
+                        else{
+                            switch(key) {
+                            case PAD_HOME:
+                                key = HOME;
+                                break;
+                            case PAD_END:
+                                key = END;
+                                break;
+                            case PAD_PAGEUP:
+                                key = PAGEUP;
+                                break;
+                            case PAD_PAGEDOWN:
+                                key = PAGEDOWN;
+                                break;
+                            case PAD_INS:
+                                key = INSERT;
+                                break;
+                            case PAD_UP:
+                                key = UP;
+                                break;
+                            case PAD_DOWN:
+                                key = DOWN;
+                                break;
+                            case PAD_LEFT:
+                                key = LEFT;
+                                break;
+                            case PAD_RIGHT:
+                                key = RIGHT;
+                                break;
+                            case PAD_DOT:
+                                key = DELETE;
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
                 /* only deal when press */
                 key |= bShift_l  ? FLAG_SHIFT_L  : 0;
                 key |= bShift_r  ? FLAG_SHIFT_R  : 0;
@@ -177,6 +282,7 @@ PUBLIC void keyboard_read(TTY* p_tty)
                 key |= bCtrl_r   ? FLAG_CTRL_R   : 0;
                 key |= bAlt_l    ? FLAG_ALT_L    : 0;
                 key |= bAlt_r    ? FLAG_ALT_R    : 0;
+                key |= pad       ? FLAG_PAD      : 0;
 
                 in_process(p_tty, key);
             }
@@ -207,10 +313,39 @@ PRIVATE u8 get_byte_from_kbuf()
     return scan_code;
 }
 
-PRIVATE void resetCursor()
+
+/**
+  * @brief  等待 8042 的输入缓冲区空
+  */
+PRIVATE void kb_wait()
 {
-    out_byte(CRTC_ADDR_REG, CURSOR_H);
-    out_byte(CRTC_DATA_REG, ((disp_pos/2)>>8)&0xFF);
-    out_byte(CRTC_ADDR_REG, CURSOR_L);
-    out_byte(CRTC_DATA_REG, (disp_pos/2)&0xFF);
+    u8 kb_stat;
+
+    do {
+        kb_stat = in_byte(KB_CMD);
+    } while (kb_stat & 0x02);
+}
+
+
+PRIVATE void kb_ack()
+{
+    u8 kb_read;
+
+    do {
+        kb_read = in_byte(KB_DATA);
+    } while (kb_read =! KB_ACK);
+}
+
+
+PRIVATE void set_leds()
+{
+    u8 leds = (bCaps_lock << 2) | (bNum_lock << 1) | bScroll_lock;
+
+    kb_wait();
+    out_byte(KB_DATA, LED_CODE);
+    kb_ack();
+
+    kb_wait();
+    out_byte(KB_DATA, leds);
+    kb_ack();
 }
