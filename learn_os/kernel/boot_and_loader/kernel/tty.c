@@ -13,6 +13,7 @@
 
 PRIVATE u8 nextRow = 0;
 PRIVATE void init_tty(TTY* p_tty);
+PRIVATE void put_key(TTY* p_tty, u32 key);
 PRIVATE void tty_do_read(TTY* p_tty);
 PRIVATE void tty_do_write(TTY* p_tty);
 
@@ -63,6 +64,12 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
         int raw_code = key & MASK_RAW;
         switch (raw_code)
         {
+        case ENTER:
+            put_key(p_tty, '\n');
+            break;
+        case BACKSPACE:
+            put_key(p_tty, '\b');
+            break;
         case UP:
             if (nextRow++ > 62) {
                 nextRow = 63;   /* the bottom row */
@@ -100,6 +107,17 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
     }
 }
 
+PRIVATE void put_key(TTY* p_tty, u32 key)
+{
+    if (p_tty->inbuf_count < TTY_IN_BYTES) {
+        *(p_tty->p_inbuf_head) = key;
+        p_tty->p_inbuf_head++;
+        if (p_tty->p_inbuf_head == p_tty->in_buf + TTY_IN_BYTES) {
+            p_tty->p_inbuf_head = p_tty->in_buf;
+        }
+        p_tty->inbuf_count++;
+    }
+}
 
 PRIVATE void tty_do_read(TTY* p_tty)
 {
