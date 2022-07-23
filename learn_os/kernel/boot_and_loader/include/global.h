@@ -5,6 +5,7 @@
 extern u32 disp_pos;
 extern PUBLIC u32      k_reenter;
 extern TASK task_table[NR_TASKS];
+extern TASK user_proc_table[NR_PROCS];
 extern irq_handler irq_table[NR_IRQ];
 extern u32 ticks;
 extern PUBLIC  TTY     tty_table[NR_CONSOLES];

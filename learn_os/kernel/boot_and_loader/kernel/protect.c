@@ -134,7 +134,7 @@ PUBLIC void init_prot()
     init_IDT_Desc(INT_VECTOR_IRQ8+7, DA_386IGate, hwint15, PRIVILEGE_KRNL);
     init_IDT_Desc(INT_VECTOR_SYS_CALL, DA_386IGate, sys_call, PRIVILEGE_USER);
 
-    /* init tss */
+    /* init descriptor of tss which in GDT */
     memset(&tss, 0, sizeof(tss));
     tss.ss0 = SELECTOR_KERNEL_DS;
     init_Descriptor(&gdt[INDEX_TSS],
@@ -143,10 +143,10 @@ PUBLIC void init_prot()
             DA_386TSS);
     tss.iobase = sizeof(tss);           /* 没有I/O许可位图 */
 
-    /* init LDT */
+    /* init descriptor of LDT which in GDT */
     int i;
     u16 selector_ldt = INDEX_LDT_FIRST << 3;
-    for (i = 0; i < NR_TASKS; i++) {
+    for (i = 0; i < NR_TASKS+NR_PROCS; i++) {
         init_Descriptor(
             &gdt[selector_ldt>>3],
             vir2phys(seg2phys(SELECTOR_KERNEL_DS), proc_tables[i].ldts),

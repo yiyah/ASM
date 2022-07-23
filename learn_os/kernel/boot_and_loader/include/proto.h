@@ -40,7 +40,7 @@ PUBLIC void ClearScreen();
 
 /* main.c */
 extern PROCESS* p_proc_ready;
-extern PUBLIC PROCESS proc_tables[NR_TASKS];
+extern PUBLIC PROCESS proc_tables[NR_TASKS+NR_PROCS];
 
 /* start.c */
 extern PUBLIC TSS tss;
