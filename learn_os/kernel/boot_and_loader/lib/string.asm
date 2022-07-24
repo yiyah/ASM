@@ -80,8 +80,8 @@ strcpy:
     push    esi
     push    edi
 
-    mov     esi, [ebp+8]    ; p_dst
-    mov     edi, [ebp+12]   ; p_src
+    mov     edi, [ebp+8]    ; p_dst
+    mov     esi, [ebp+12]   ; p_src
 
     cld                     ; DF = 0
 _strcpy_next:

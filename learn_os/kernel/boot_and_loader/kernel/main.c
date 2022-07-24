@@ -17,9 +17,10 @@ PUBLIC u8       task_stack[STACK_SIZE_TOTAL];       /* include all process stack
 void TestA()
 {
     int i = 0;
+
     while(1)
     {
-        printf("A");
+        printf("<Ticks:%x>", get_ticks());
         //disp_str("A");
         milli_delay(200);
     }

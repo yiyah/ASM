@@ -39,8 +39,8 @@ PUBLIC void itoh(char* str ,int num)
 
     for (i = 0, p = str;i < size_num;i++)
     {
-        ctoh(p, (num>>(size_num-i-1)*8) & 0xFF);
-        p += 4;
+        ctoh(p, num >> ((size_num-i-1)*8 & 0xFF));
+        p += 2;
     }
 }
 
@@ -48,36 +48,17 @@ PUBLIC void itoh(char* str ,int num)
 PUBLIC void disp_hex_oneByte(u8 hex)
 {
     u8 szHex[3] = {0};
-    u8 hexHight = (hex >> 4) & 0xF;
-    u8 hexLow   = hex & 0xF;
-    
-    hexHight += '0';
-    hexLow   += '0';
-    if(hexHight > '9'){
-        // is letter
-        hexHight += 7;
-    }
+    ctoh(szHex, hex);
 
-    if(hexLow > '9'){
-        // is letter
-        hexLow += 7;
-    }
-    szHex[0] = hexHight;
-    szHex[1] = hexLow;
     disp_str(szHex);
 }
 
 PUBLIC void disp_hex_fourByte(u32 hex)
 {
-    u8 szHex[4] = {0};
-    szHex[0] = (hex >> 24) & 0xFF;
-    szHex[1] = (hex >> 16) & 0xFF;
-    szHex[2] = (hex >>  8) & 0xFF;
-    szHex[3] = (hex >>  0) & 0xFF;
-    disp_hex_oneByte(szHex[0]);
-    disp_hex_oneByte(szHex[1]);
-    disp_hex_oneByte(szHex[2]);
-    disp_hex_oneByte(szHex[3]);
+    u8 szHex[9] = {0};
+    itoh(szHex, hex);
+
+    disp_str(szHex);
 }
 
 PUBLIC void delay(u16 time)
