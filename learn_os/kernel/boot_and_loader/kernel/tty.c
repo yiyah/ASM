@@ -11,7 +11,6 @@
 #define TTY_FIRST (tty_table)
 #define TTY_END   (tty_table+NR_CONSOLES)
 
-PRIVATE u8 nextRow = 0;
 PRIVATE void init_tty(TTY* p_tty);
 PRIVATE void put_key(TTY* p_tty, u32 key);
 PRIVATE void tty_do_read(TTY* p_tty);
@@ -71,17 +70,11 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
             put_key(p_tty, '\b');
             break;
         case UP:
-            if (nextRow++ > 62) {
-                nextRow = 63;   /* the bottom row */
-            }
             if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
                 scroll_screen(p_tty->p_console, SCR_DN);
             }
             break;
         case DOWN:
-            if (nextRow-- == 0) {
-                nextRow = 0;    /* the top row */
-            }
             if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
                 scroll_screen(p_tty->p_console, SCR_UP);
             }
@@ -101,6 +94,7 @@ PUBLIC void in_process(TTY* p_tty, u32 key)
             if ((FLAG_ALT_L & key) || (FLAG_ALT_R & key)) {
                 select_console(raw_code - F1);
             }
+            break;
         default:
             break;
         }

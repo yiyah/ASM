@@ -85,8 +85,10 @@ PUBLIC void out_char(CONSOLE* p_con, char ch)
 
 PRIVATE void flush(CONSOLE* p_con)
 {
-    set_cursor(p_con->cursor);
-    set_video_start_addr(p_con->current_start_addr);
+    if (is_current_console(p_con)) {
+        set_cursor(p_con->cursor);
+        set_video_start_addr(p_con->current_start_addr);
+    }
 }
 
 
@@ -123,8 +125,7 @@ PUBLIC void select_console(int nr_console)
 
     nr_current_console = nr_console;
 
-    set_cursor(console_table[nr_console].cursor);
-    set_video_start_addr(console_table[nr_console].current_start_addr);
+    flush(&console_table[nr_console]);
 }
 
 
@@ -150,6 +151,5 @@ PUBLIC void scroll_screen(CONSOLE* p_con, int direction)
     else{
     }
 
-    set_video_start_addr(p_con->current_start_addr);
-    set_cursor(p_con->cursor);
+    flush(p_con);
 }

@@ -24,12 +24,12 @@ get_ticks:
 ; @Function: write(char* buf, int len);
 ; ===================================
 write:
-    push    ebx
-    push    ecx
+    push    ebx                 ; `. note that this push will destroy
+    push    ecx                 ; /  buf and len's stack position.
 
     mov     eax, _NR_write
-    mov     ebx, [esp+4]    ; buf
-    mov     ecx, [esp+8]    ; len
+    mov     ebx, [esp+12]       ; buf
+    mov     ecx, [esp+16]       ; len
     int     INT_VECTOR_SYS_CALL
 
     pop     ecx
