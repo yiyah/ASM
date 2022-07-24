@@ -48,6 +48,7 @@ typedef struct s_proc {
     int             priority;
     u32             pid;
     char            p_name[32];
+    int             nr_tty;     /* print in which concole */
 }PROCESS;
 
 typedef struct s_task {

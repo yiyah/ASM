@@ -21,7 +21,7 @@ HKERNEL		= kernel.bin
 OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
 			  kernel/main.o kernel/global.o kernel/clock.o kernel/process.o \
 			  kernel/syscall.o kernel/keyboard.o kernel/tty.o kernel/console.o \
-			  lib/kliba.o lib/string.o lib/klib.o
+			  kernel/printf.o kernel/vsprintf.o lib/kliba.o lib/string.o lib/klib.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
@@ -77,6 +77,12 @@ kernel/tty.o : kernel/tty.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/console.o : kernel/console.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/printf.o : kernel/printf.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/vsprintf.o : kernel/vsprintf.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 # compile lib

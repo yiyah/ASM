@@ -69,6 +69,6 @@
 #define AT_WINI_IRQ     14  /* at winchester */
 
 /* system call */
-#define NR_SYS_CALL     1
+#define NR_SYS_CALL     2
 
 #endif /* _CONST_H_ */

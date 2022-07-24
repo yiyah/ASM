@@ -12,7 +12,7 @@ ALIGN   32
 LABEL_GDT:          Descriptor       0,       0, 0       ; empty descriptor
 LABEL_DESC_FLAT_C:  Descriptor       0, 0xFFFFF, DA_CR|DA_32|DA_LIMIT_4K
 LABEL_DESC_FLAT_RW: Descriptor       0, 0xFFFFF, DA_DRW|DA_32|DA_LIMIT_4K
-LABEL_DESC_VIDEO:   Descriptor 0xB8000,    4000, DA_DRW|DA_DPL3
+LABEL_DESC_VIDEO:   Descriptor 0xB8000,  0xFFFF, DA_DRW|DA_DPL3
 
 LENOFGDT    equ     $ - LABEL_GDT
 PTROFGDT    dw      LENOFGDT - 1            ; note that this is limit of GDT, so current byte cannot access, then need -1.

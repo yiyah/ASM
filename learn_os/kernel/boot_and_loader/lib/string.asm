@@ -2,6 +2,7 @@
 global  memcpy
 global  memset
 global  strcpy
+global  strlen
 
 ; ===================================
 ; @Function: eax = void *memcpy(void* es:dest, const void* es:src, size_t n);
@@ -93,5 +94,28 @@ _strcpy_exit:
     pop     edi
     pop     esi
     pop     eax
+    pop     ebp
+    ret
+
+; ===================================
+; @Function: int strlen(char* p_str);
+; @retval:  eax: length
+; @retval: length of p_str
+; ===================================
+strlen:
+    push    ebp
+    mov     ebp, esp
+    push    esi
+
+    xor     eax, eax
+    mov     esi, [ebp + 8]
+_strlen_next:
+    cmp     byte [esi], 0
+    je      _strlen_Ret
+    inc     esi
+    inc     eax
+    jmp     _strlen_next
+_strlen_Ret:
+    pop     esi
     pop     ebp
     ret

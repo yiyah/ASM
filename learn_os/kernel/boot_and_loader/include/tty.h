@@ -14,5 +14,6 @@ typedef struct s_tty
     struct s_console* p_console;
 }TTY;
 
+PUBLIC int sys_write(char* buf, int len, PROCESS* p_proc);
 
 #endif

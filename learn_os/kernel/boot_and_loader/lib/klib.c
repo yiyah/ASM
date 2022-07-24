@@ -8,6 +8,43 @@
 #include "proto.h"
 
 
+PUBLIC void ctoh(char* str ,char num)
+{
+    u8* p = str;
+    u8 hexHight = (num >> 4) & 0xF;
+    u8 hexLow   = num & 0xF;
+    
+    hexHight += '0';
+    hexLow   += '0';
+    if(hexHight > '9'){
+        // is letter
+        hexHight += 7;
+    }
+
+    if(hexLow > '9'){
+        // is letter
+        hexLow += 7;
+    }
+
+    *p++ = hexHight;
+    *p++ = hexLow;
+    *p   = 0;
+}
+
+PUBLIC void itoh(char* str ,int num)
+{
+    u8 i = 0;
+    u8 size_num = sizeof(num);
+    char* p;
+
+    for (i = 0, p = str;i < size_num;i++)
+    {
+        ctoh(p, (num>>(size_num-i-1)*8) & 0xFF);
+        p += 4;
+    }
+}
+
+
 PUBLIC void disp_hex_oneByte(u8 hex)
 {
     u8 szHex[3] = {0};

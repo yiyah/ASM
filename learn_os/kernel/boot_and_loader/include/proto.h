@@ -6,6 +6,7 @@
 PUBLIC void* memcpy(void* pDst, void* pSrc, int iSize);
 PUBLIC void memset(void* p_dst, u8 ch, u32 size);
 PUBLIC char* strcpy(char* p_dst, char* p_src);
+PUBLIC int strlen(char* p_str);
 
 /* kliba.asm */
 PUBLIC void disp_str(char* pszInfo);
@@ -18,11 +19,12 @@ PUBLIC void enable_int();
 PUBLIC void disable_int();
 
 /* syscall.asm */
-PUBLIC void sys_call();
 PUBLIC u32 get_ticks();
+PUBLIC void write(char* buf, int len);
 
 /* kernel.asm */
 PUBLIC void restart();
+PUBLIC void sys_call();
 
 /* i8259.c */
 PUBLIC void init_8259A();
@@ -33,6 +35,8 @@ PUBLIC void put_irq_handler(u32 irq, irq_handler handler);
 PUBLIC void init_prot();
 
 /* klib.c */
+PUBLIC void ctoh(char* str ,char num);
+PUBLIC void itoh(char* str ,int num);
 PUBLIC void disp_hex_oneByte(u8 hex);
 PUBLIC void disp_hex_fourByte(u32 hex);
 PUBLIC void delay(u16 timef);
@@ -68,5 +72,12 @@ PUBLIC void keyboard_read();
 /* tty.c */
 PUBLIC void task_tty();
 PUBLIC void in_process(TTY* p_tty, u32 key);
+PUBLIC int sys_write(char* buf, int len, PROCESS* p_proc);
+
+/* printf.c */
+int printf(const char* fmt, ...);
+
+/* vsprintf.c */
+PUBLIC int vsprintf(char *buf, const char *fmt, va_list args);
 
 #endif

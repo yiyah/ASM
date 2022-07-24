@@ -19,8 +19,9 @@ void TestA()
     int i = 0;
     while(1)
     {
-        //disp_str("A.");
-        milli_delay(10);
+        printf("A");
+        //disp_str("A");
+        milli_delay(200);
     }
 }
 
@@ -28,8 +29,9 @@ void TestB()
 {
     while(1)
     {
-        //disp_str("B.");
-        milli_delay(10);
+        printf("B ");
+        //disp_str("B");
+        milli_delay(200);
     }
 }
 
@@ -37,8 +39,9 @@ void TestC()
 {
     while(1)
     {
-        //disp_str("C.");
-        milli_delay(10);
+        //disp_str("C");
+        printf("C ");
+        milli_delay(200);
     }
 }
 
@@ -90,6 +93,7 @@ PUBLIC void kernel_main()
         p_proc->regs.eip = (u32)p_task->initial_eip;
         p_proc->regs.esp = (u32)p_task_stack;
         p_proc->regs.eflags = eflags;        // IF=1, IOPL=1, bit 2 is always 1.
+        p_proc->nr_tty = 0;
 
         /* for next init LDT */
         p_task_stack -= p_task->stacksize;
@@ -100,7 +104,12 @@ PUBLIC void kernel_main()
 
     proc_tables[0].ticks = proc_tables[0].priority = 15;
     proc_tables[1].ticks = proc_tables[1].priority = 5;
-    proc_tables[2].ticks = proc_tables[2].priority = 3;
+    proc_tables[2].ticks = proc_tables[2].priority = 5;
+    proc_tables[3].ticks = proc_tables[3].priority = 5;
+
+    proc_tables[1].nr_tty = 0;   /* TestA */
+    proc_tables[2].nr_tty = 1;   /* TestB */
+    proc_tables[3].nr_tty = 1;   /* TestC */
 
     k_reenter = 0;              /* the first time will self-decrement */
     ticks = 0;
