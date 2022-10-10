@@ -99,8 +99,8 @@ lib/klib.o : lib/klib.c include/type.h include/const.h include/proto.h
 image : $(HBOOT) $(HKERNEL) buildimg
 
 buildimg:
-	dd if=boot/boot.bin of=../../mbr/b.img bs=512 count=1 conv=notrunc
-	sudo mount -o loop ../../mbr/b.img /mnt/floppy
+	dd if=boot/boot.bin of=../b.img bs=512 count=1 conv=notrunc
+	sudo mount -o loop ../b.img /mnt/floppy
 	sudo cp -v boot/loader.bin /mnt/floppy/L.BIN
 	sudo cp -v kernel.bin /mnt/floppy/
 	sudo umount /mnt/floppy
