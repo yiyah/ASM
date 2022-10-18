@@ -14,7 +14,7 @@ int printf(const char* fmt, ...)
 
     va_list arg = (va_list) ((char*) (&fmt) + 4);
     len = vsprintf(buf, fmt, arg);
-    write(buf, len);
+    printx(buf);
 
     return len;
 }

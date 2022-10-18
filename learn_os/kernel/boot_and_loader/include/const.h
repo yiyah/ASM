@@ -4,6 +4,21 @@
 #define PUBLIC          /* PUBLIC is the opposite of PRIVATE */
 #define PRIVATE static  /* PRIVATE x limits the scope of x */
 
+/* Color */
+/*
+ * e.g. MAKE_COLOR(BLUE, RED)
+ *      MAKE_COLOR(BLACK, RED) | BRIGHT
+ *      MAKE_COLOR(BLACK, RED) | BRIGHT | FLASH
+ */
+#define BLACK   0x0     /* 0000 */
+#define WHITE   0x7     /* 0111 */
+#define RED     0x4     /* 0100 */
+#define GREEN   0x2     /* 0010 */
+#define BLUE    0x1     /* 0001 */
+#define FLASH   0x80    /* 1000 0000 */
+#define BRIGHT  0x08    /* 0000 1000 */
+#define MAKE_COLOR(x,y) ((x<<4) | y) /* MAKE_COLOR(Background,Foreground) */
+
 /* Boolean */
 #define TRUE    1
 #define FALSE   0
@@ -70,5 +85,9 @@
 
 /* system call */
 #define NR_SYS_CALL     2
+
+/* magic chars used by `printx' */
+#define MAG_CH_PANIC    '\002'
+#define MAG_CH_ASSERT   '\003'
 
 #endif /* _CONST_H_ */

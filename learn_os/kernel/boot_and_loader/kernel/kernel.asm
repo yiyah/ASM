@@ -270,9 +270,18 @@ save:
     push    es      ; | save register for process which be interrupted
     push    fs      ; |
     push    gs      ;/
+
+    ;; 注意，从这里开始，一直到 `mov esp, StackTop'，中间坚决不能用 push/pop 指令，
+    ;; 因为当前 esp 指向 proc_table 里的某个位置，push 会破坏掉进程表，导致灾难性后果！
+
+    mov     esi, edx    ; 保存 edx，因为 edx 里保存了系统调用的参数
+
     mov     dx, ss
     mov     ds, dx
     mov     es, dx
+    mov     fs, dx
+
+    mov     edx, esi    ; 恢复 edx
 
     mov     esi, esp                        ; esp is point to process table
 
@@ -311,16 +320,17 @@ restar_reenter:
 
 ; ===================================
 ; @Function: sys_call()
+; @Attention: can not change esi due to
+;      esi point to process table from save()
 ; ===================================
 sys_call:
     call    save
-    push    dword [p_proc_ready]
     sti
 
-    push    ecx
-    push    ebx
+    push    dword [p_proc_ready]
+    push    edx
     call    [sys_call_table + eax * 4]
-    add     esp, 4 * 3
+    add     esp, 4 * 2
 
     mov     [esi + EAXREG - P_STACKBASE], eax   ; return value
     cli

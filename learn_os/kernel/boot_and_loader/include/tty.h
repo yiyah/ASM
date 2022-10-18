@@ -11,9 +11,8 @@ typedef struct s_tty
     u32*    p_inbuf_tail;           /* point to the key which need to deal */
     int     inbuf_count;            /* how much has been filled in the buffer */
 
-    struct s_console* p_console;
+    struct  s_console* p_console;
 }TTY;
 
-PUBLIC int sys_write(char* buf, int len, PROCESS* p_proc);
 
 #endif

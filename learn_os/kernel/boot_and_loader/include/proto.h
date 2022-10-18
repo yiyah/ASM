@@ -20,7 +20,7 @@ PUBLIC void disable_int();
 
 /* syscall.asm */
 PUBLIC u32 get_ticks();
-PUBLIC void write(char* buf, int len);
+void printx(char* s);
 
 /* kernel.asm */
 PUBLIC void restart();
@@ -64,6 +64,8 @@ PUBLIC void milli_delay(u32 milli_sec);
 /* process.c */
 PUBLIC void schedule();
 PUBLIC u32 sys_get_ticks();
+PUBLIC int ldt_seg_linear(PROCESS* p, int idx);
+PUBLIC void* va2la(int pid, void* va);
 
 /* keyboard.c */
 PUBLIC void init_keyboard();
@@ -72,7 +74,7 @@ PUBLIC void keyboard_read();
 /* tty.c */
 PUBLIC void task_tty();
 PUBLIC void in_process(TTY* p_tty, u32 key);
-PUBLIC int sys_write(char* buf, int len, PROCESS* p_proc);
+PUBLIC int sys_printx(char* s, struct s_proc* p_proc);
 
 /* printf.c */
 int printf(const char* fmt, ...);

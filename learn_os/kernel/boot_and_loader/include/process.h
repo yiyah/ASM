@@ -57,4 +57,6 @@ typedef struct s_task {
     char    name[32];
 }TASK;
 
+#define proc2pid(x) (x - proc_tables)
+
 #endif
