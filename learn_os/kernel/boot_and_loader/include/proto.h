@@ -77,9 +77,13 @@ PUBLIC void in_process(TTY* p_tty, u32 key);
 PUBLIC int sys_printx(char* s, struct s_proc* p_proc);
 
 /* printf.c */
-int printf(const char* fmt, ...);
+PUBLIC  int     printf(const char* fmt, ...);
+#define printl  printf
 
 /* vsprintf.c */
 PUBLIC int vsprintf(char *buf, const char *fmt, va_list args);
+
+/* misc.c */
+PUBLIC void panic(const char *fmt, ...);
 
 #endif

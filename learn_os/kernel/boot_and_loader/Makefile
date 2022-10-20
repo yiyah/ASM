@@ -21,7 +21,8 @@ HKERNEL		= kernel.bin
 OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
 			  kernel/main.o kernel/global.o kernel/clock.o kernel/process.o \
 			  kernel/syscall.o kernel/keyboard.o kernel/tty.o kernel/console.o \
-			  kernel/printf.o kernel/vsprintf.o lib/kliba.o lib/string.o lib/klib.o
+			  kernel/printf.o kernel/vsprintf.o lib/kliba.o lib/string.o \
+			  lib/klib.o lib/misc.o
 DASMOUTPUT	= kernel.bin.asm
 
 .PHONY : everything clean all buildimg disasm
@@ -93,6 +94,9 @@ lib/string.o : lib/string.asm
 	$(ASM) -f elf -o $@ $<
 
 lib/klib.o : lib/klib.c include/type.h include/const.h include/proto.h
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/misc.o : lib/misc.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 # for setup bochs
