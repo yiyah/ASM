@@ -7,10 +7,36 @@
 #include "global.h"
 #include "proto.h"
 
+
+/**
+  * @brief  integer to array
+  * @param  value which integer need to change
+  *               do not pass negative value
+  * @param  str   save to where
+  * @param  radix Which base to convert to
+  *               10: decimal
+  *               16: hex
+  * @retval pointer to str
+  */
+PUBLIC char* itoa(int value, char **p_str, int radix)
+{
+    int m = value % radix; // modulo operation
+    int q = value / radix; // quotient
+
+    if (q) {
+        itoa(q, p_str, radix);
+    }
+    *(*p_str)++ = (m < 10) ? (m + '0') : (m - 10 + 'A');
+
+    return *p_str;
+}
+
+
 PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 {
     char*   p;
     char    tmp[256];
+    int     m;
     va_list p_next_arg = args;
 
     for (p=buf;*fmt;fmt++) {
@@ -29,12 +55,27 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
             p += strlen(tmp);
             break;
         case 's':
+            strcpy(p, *((char**)p_next_arg));
+            p += strlen(*((char**)p_next_arg));
+            p_next_arg += 4;
+            break;
+        case 'c':
+            *p++ = *((char*)p_next_arg);
+            p_next_arg += 4;
+            break;
+        case 'd':
+            m = *((int*)p_next_arg);
+            if (m < 0) {
+                *p++ = '-';
+                m = m * (-1);
+            }
+            itoa(m, &p, 10);
+            p_next_arg += 4;
             break;
         default:
             break;
         }
     }
-
     return (p - buf);
 }
 
