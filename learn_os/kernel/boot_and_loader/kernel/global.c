@@ -22,4 +22,5 @@ PUBLIC  TTY     tty_table[NR_CONSOLES];
 PUBLIC  CONSOLE console_table[NR_CONSOLES];
 
 PUBLIC system_call sys_call_table[NR_SYS_CALL] = {sys_get_ticks,
-                                                  sys_printx};
+                                                  sys_printx,
+                                                  sys_sendrec};

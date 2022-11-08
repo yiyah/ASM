@@ -3,6 +3,14 @@
 
 
 /* string.asm */
+/**
+ * `phys_copy' and `phys_set' are used only in the kernel, where segments
+ * are all flat (based on 0). In the meanwhile, currently linear address
+ * space is mapped to the identical physical address space. Therefore,
+ * a `physical copy' will be as same as a common copy, so does `phys_set'.
+ */
+#define phys_copy   memcpy
+#define phys_set    memset
 PUBLIC void* memcpy(void* pDst, void* pSrc, int iSize);
 PUBLIC void memset(void* p_dst, u8 ch, u32 size);
 PUBLIC char* strcpy(char* p_dst, char* p_src);
@@ -20,6 +28,7 @@ PUBLIC void disable_int();
 
 /* syscall.asm */
 PUBLIC u32 get_ticks();
+int sendrec(int function, int src_dest, MESSAGE* msg);
 void printx(char* s);
 
 /* kernel.asm */
@@ -63,6 +72,8 @@ PUBLIC void milli_delay(u32 milli_sec);
 
 /* process.c */
 PUBLIC void schedule();
+PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* m, struct s_proc* p);
+PUBLIC int send_recv(int function, int src_dest, MESSAGE* msg);
 PUBLIC u32 sys_get_ticks();
 PUBLIC int ldt_seg_linear(PROCESS* p, int idx);
 PUBLIC void* va2la(int pid, void* va);
@@ -74,7 +85,7 @@ PUBLIC void keyboard_read();
 /* tty.c */
 PUBLIC void task_tty();
 PUBLIC void in_process(TTY* p_tty, u32 key);
-PUBLIC int sys_printx(char* s, struct s_proc* p_proc);
+PUBLIC int sys_printx(int _unused1, int _unused2, char* s, struct s_proc* p_proc);
 
 /* printf.c */
 PUBLIC  int     printf(const char* fmt, ...);
@@ -82,6 +93,7 @@ PUBLIC  int     printf(const char* fmt, ...);
 
 /* vsprintf.c */
 PUBLIC int vsprintf(char *buf, const char *fmt, va_list args);
+PUBLIC int sprintf(char *buf, const char *fmt, ...);
 
 /* misc.c */
 PUBLIC void panic(const char *fmt, ...);

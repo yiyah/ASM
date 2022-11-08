@@ -4,6 +4,8 @@
 #define PUBLIC          /* PUBLIC is the opposite of PRIVATE */
 #define PRIVATE static  /* PRIVATE x limits the scope of x */
 
+#define STR_DEFAULT_LEN 1024
+
 /* Color */
 /*
  * e.g. MAKE_COLOR(BLUE, RED)
@@ -30,6 +32,10 @@
 #define PRIVILEGE_KRNL  0
 #define PRIVILEGE_TASK  1
 #define PRIVILEGE_USER  3
+
+/* Process */
+#define SENDING   0x02  /* set when proc trying to send */
+#define RECEIVING 0x04  /* set when proc trying to recv */
 
 /* TTY */
 #define NR_CONSOLES     3
@@ -83,8 +89,18 @@
 #define PRINTER_IRQ     7
 #define AT_WINI_IRQ     14  /* at winchester */
 
+/* tasks */
+#define INTERRUPT       -10
+#define ANY             (NR_TASKS + NR_PROCS + 10)
+#define NO_TASK         (NR_TASKS + NR_PROCS + 20)
+
 /* system call */
-#define NR_SYS_CALL     2
+#define NR_SYS_CALL     3
+
+/* ipc */
+#define SEND            1
+#define RECEIVE         2
+#define BOTH            3       /* BOTH = (SEND | RECEIVE) */
 
 /* magic chars used by `printx' */
 #define MAG_CH_PANIC    '\002'
@@ -99,5 +115,22 @@ void assertion_failure(char *exp, char *file, char *base_file, int line);
 #else
 #define asser(exp)
 #endif
+
+/**
+ * @enum msgtype
+ * @brief MESSAGE types
+ */
+enum msgtype {
+    /* 
+     * when hard interrupt occurs, a msg (with type==HARD_INT) will
+     * be sent to some tasks
+     */
+    HARD_INT = 1,
+
+    /* SYS task */
+    GET_TICKS,
+};
+
+#define RETVAL  u.m3.m3i1
 
 #endif /* _CONST_H_ */

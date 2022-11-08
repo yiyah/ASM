@@ -320,8 +320,12 @@ restar_reenter:
 
 ; ===================================
 ; @Function: sys_call()
-; @Attention: can not change esi due to
-;      esi point to process table from save()
+; @Attention: do not change below register
+;   esi: point to process table in save()
+;   eax: Indicates which function to run
+;   ebx: fun param: int
+;   ecx: fun param: int
+;   edx: fun param: pointer
 ; ===================================
 sys_call:
     call    save
@@ -329,6 +333,8 @@ sys_call:
 
     push    dword [p_proc_ready]
     push    edx
+    push    ecx
+    push    ebx
     call    [sys_call_table + eax * 4]
     add     esp, 4 * 2
 

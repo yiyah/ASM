@@ -2,9 +2,11 @@
 #define __PROCESS_H_
 
 
-/* Number of tasks */
+/* Number of tasks & procs */
 #define NR_TASKS    1
 #define NR_PROCS    3
+#define FIRST_PROC  proc_table[0]
+#define LAST_PROC   proc_table[NR_TASKS + NR_PROCS - 1]
 
 /* stacks of tasks */
 #define STACK_SIZE_TTY      0x8000              /* 32KB */
@@ -48,6 +50,28 @@ typedef struct s_proc {
     int             priority;
     u32             pid;
     char            p_name[32];
+    int  p_flags;               /**
+                                 * process flags.
+                                 * A proc is runnable iff p_flags==0
+                                 */
+
+    MESSAGE * p_msg;
+    int p_recvfrom;
+    int p_sendto;
+
+    int has_int_msg;            /**
+                                 * nonzero if an INTERRUPT occurred when
+                                 * the task is not ready to deal with it.
+                                 */
+
+    struct s_proc* q_sending;   /**
+                                 * queue of procs sending messages to
+                                 * this proc
+                                 */
+    struct s_proc* next_sending;/**
+                                 * next proc in the sending
+                                 * queue (q_sending)
+                                 */
     int             nr_tty;     /* print in which concole */
 }PROCESS;
 
