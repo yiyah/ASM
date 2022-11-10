@@ -27,7 +27,6 @@ PUBLIC void enable_int();
 PUBLIC void disable_int();
 
 /* syscall.asm */
-PUBLIC u32 get_ticks();
 int sendrec(int function, int src_dest, MESSAGE* msg);
 void printx(char* s);
 
@@ -61,6 +60,7 @@ extern PUBLIC DESCRIPTOR gdt[GDT_DESC_NUM];
 extern PUBLIC GATE idt[IDT_DESC_NUM];
 
 /* main.c */
+PUBLIC int get_ticks();
 void TestA();
 void TestB();
 void TestC();
@@ -74,9 +74,9 @@ PUBLIC void milli_delay(u32 milli_sec);
 PUBLIC void schedule();
 PUBLIC int sys_sendrec(int function, int src_dest, MESSAGE* m, struct s_proc* p);
 PUBLIC int send_recv(int function, int src_dest, MESSAGE* msg);
-PUBLIC u32 sys_get_ticks();
 PUBLIC int ldt_seg_linear(PROCESS* p, int idx);
 PUBLIC void* va2la(int pid, void* va);
+PUBLIC void reset_msg(MESSAGE* p);
 
 /* keyboard.c */
 PUBLIC void init_keyboard();

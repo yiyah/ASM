@@ -123,11 +123,6 @@ PUBLIC int send_recv(int function, int src_dest, MESSAGE* msg)
     return ret;
 }
 
-PUBLIC u32 sys_get_ticks()
-{
-    return ticks;
-}
-
 /**
   * @brief  <Ring 0~1> Calculate the linear address of a certain segment of a given proc.
   * @param  p   Whose (the proc ptr).

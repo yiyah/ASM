@@ -91,11 +91,13 @@
 
 /* tasks */
 #define INTERRUPT       -10
+#define TASK_TTY        0
+#define TASK_SYS        1
 #define ANY             (NR_TASKS + NR_PROCS + 10)
 #define NO_TASK         (NR_TASKS + NR_PROCS + 20)
 
 /* system call */
-#define NR_SYS_CALL     3
+#define NR_SYS_CALL     2
 
 /* ipc */
 #define SEND            1

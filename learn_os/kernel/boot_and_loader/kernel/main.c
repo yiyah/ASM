@@ -14,6 +14,15 @@ PUBLIC PROCESS  proc_tables[NR_TASKS+NR_PROCS];
 PUBLIC u8       task_stack[STACK_SIZE_TOTAL];       /* include all process stack */
 
 
+PUBLIC int get_ticks()
+{
+    MESSAGE msg;
+    reset_msg(&msg);
+    msg.type = GET_TICKS;
+    send_recv(BOTH, TASK_SYS, &msg);
+    return msg.RETVAL;
+}
+
 void TestA()
 {
     int i = 0;
