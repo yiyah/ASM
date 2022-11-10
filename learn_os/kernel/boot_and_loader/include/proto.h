@@ -82,6 +82,9 @@ PUBLIC void* va2la(int pid, void* va);
 PUBLIC void init_keyboard();
 PUBLIC void keyboard_read();
 
+/* systask.c */
+PUBLIC void task_sys();
+
 /* tty.c */
 PUBLIC void task_tty();
 PUBLIC void in_process(TTY* p_tty, u32 key);

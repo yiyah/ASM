@@ -330,14 +330,16 @@ restar_reenter:
 sys_call:
     call    save
     sti
+    push    esi
 
     push    dword [p_proc_ready]
     push    edx
     push    ecx
     push    ebx
     call    [sys_call_table + eax * 4]
-    add     esp, 4 * 2
+    add     esp, 4 * 4
 
+    pop     esi
     mov     [esi + EAXREG - P_STACKBASE], eax   ; return value
     cli
     ret

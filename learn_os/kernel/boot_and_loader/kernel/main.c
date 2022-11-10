@@ -59,6 +59,7 @@ PUBLIC void kernel_main()
     u8       privilege;
     u8       rpl;
     u32      eflags;
+    int      prio;
 
     for(i = 0; i < NR_TASKS+NR_PROCS; i++) {
         if (i < NR_TASKS) {             /* task */
@@ -66,12 +67,14 @@ PUBLIC void kernel_main()
             privilege = PRIVILEGE_TASK;
             rpl       = RPL_TASK;
             eflags    = 0x1202;         // IF=1, IOPL=1, bit 2 is always 1.
+            prio      = 15;
         }            
         else {                          /* user process */
             p_task    = user_proc_table + (i - NR_TASKS);
             privilege = PRIVILEGE_USER;
             rpl       = RPL_USER;
             eflags    = 0x202;         // IF=1, bit 2 is always 1.
+            prio      = 5;
         }
 
         strcpy(p_proc->p_name, p_task->name);
@@ -96,6 +99,16 @@ PUBLIC void kernel_main()
         p_proc->regs.eflags = eflags;        // IF=1, IOPL=1, bit 2 is always 1.
         p_proc->nr_tty = 0;
 
+        p_proc->p_flags = 0;
+        p_proc->p_msg = 0;
+        p_proc->p_recvfrom = NO_TASK;
+        p_proc->p_sendto = NO_TASK;
+        p_proc->has_int_msg = 0;
+        p_proc->q_sending = 0;
+        p_proc->next_sending = 0;
+
+        p_proc->ticks = p_proc->priority = prio;
+    
         /* for next init LDT */
         p_task_stack -= p_task->stacksize;
         p_proc++;
@@ -103,14 +116,9 @@ PUBLIC void kernel_main()
         selector_ldt += 1 << 3;
     }
 
-    proc_tables[0].ticks = proc_tables[0].priority = 15;
-    proc_tables[1].ticks = proc_tables[1].priority = 5;
-    proc_tables[2].ticks = proc_tables[2].priority = 5;
-    proc_tables[3].ticks = proc_tables[3].priority = 5;
-
-    proc_tables[1].nr_tty = 0;   /* TestA */
-    proc_tables[2].nr_tty = 1;   /* TestB */
-    proc_tables[3].nr_tty = 1;   /* TestC */
+    proc_tables[NR_TASKS + 0].nr_tty = 0;   /* TestA */
+    proc_tables[NR_TASKS + 1].nr_tty = 1;   /* TestB */
+    proc_tables[NR_TASKS + 2].nr_tty = 1;   /* TestC */
 
     k_reenter = 0;              /* the first time will self-decrement */
     ticks = 0;

@@ -23,16 +23,20 @@ PUBLIC void schedule()
     while (!greatest_ticks) {
         /* run the high priority process */
         for (p = proc_tables; p < proc_tables + NR_TASKS + NR_PROCS; p++) {
-            if (p->ticks > greatest_ticks) {
-                greatest_ticks = p->ticks;
-                p_proc_ready = p;
+            if (0 == p->p_flags)
+            {
+                if (p->ticks > greatest_ticks) {
+                    greatest_ticks = p->ticks;
+                    p_proc_ready = p;
+                }
             }
         }
 
         /* reload the tick if all processes decrease to 0 */
         if (!greatest_ticks) {
             for (p = proc_tables; p < proc_tables + NR_TASKS + NR_PROCS; p++){
-                p->ticks = p->priority;
+                if (0 == p->p_flags)
+                    p->ticks = p->priority;
             }
         }        
     }
