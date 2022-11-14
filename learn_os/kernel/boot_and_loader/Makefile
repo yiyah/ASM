@@ -22,7 +22,7 @@ OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
 			  kernel/main.o kernel/global.o kernel/clock.o kernel/process.o \
 			  kernel/syscall.o kernel/keyboard.o kernel/tty.o kernel/console.o \
 			  kernel/printf.o kernel/vsprintf.o kernel/systask.o kernel/hd.o\
-			  lib/kliba.o lib/string.o \
+			  fs/main.o lib/kliba.o lib/string.o \
 			  lib/klib.o lib/misc.o
 DASMOUTPUT	= kernel.bin.log
 
@@ -42,6 +42,10 @@ boot/loader.bin : boot/loader.asm boot/include/*
 # compile kernel.bin
 $(HKERNEL) : $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+
+# compile fs/
+fs/main.o : fs/main.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
 
 # compile kernel/
 kernel/kernel.o : kernel/kernel.asm include/sconst.inc

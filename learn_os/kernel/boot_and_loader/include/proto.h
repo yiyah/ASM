@@ -111,4 +111,7 @@ PUBLIC int sprintf(char *buf, const char *fmt, ...);
 PUBLIC void spin(char * func_name);
 PUBLIC void panic(const char *fmt, ...);
 
+/* fs/main.c */
+PUBLIC void task_fs();
+
 #endif
