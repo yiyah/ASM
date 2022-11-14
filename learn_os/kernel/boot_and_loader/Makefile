@@ -21,7 +21,7 @@ HKERNEL		= kernel.bin
 OBJS		= kernel/kernel.o kernel/start.o kernel/i8259.o kernel/protect.o \
 			  kernel/main.o kernel/global.o kernel/clock.o kernel/process.o \
 			  kernel/syscall.o kernel/keyboard.o kernel/tty.o kernel/console.o \
-			  kernel/printf.o kernel/vsprintf.o kernel/systask.o \
+			  kernel/printf.o kernel/vsprintf.o kernel/systask.o kernel/hd.o\
 			  lib/kliba.o lib/string.o \
 			  lib/klib.o lib/misc.o
 DASMOUTPUT	= kernel.bin.log
@@ -88,6 +88,9 @@ kernel/vsprintf.o : kernel/vsprintf.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/systask.o : kernel/systask.c include/*
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/hd.o : kernel/hd.c include/*
 	$(CC) $(CFLAGS) -o $@ $<
 
 # compile lib

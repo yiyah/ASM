@@ -36,14 +36,14 @@ PUBLIC void init_8259A()
 }
 
 /* external interrupt */
-PUBLIC void spurious_irq(u32 irq)
+PUBLIC void spurious_irq(int irq)
 {
     disp_str("spurious_irq: ");
     disp_hex_fourByte(irq);
     disp_str("\n");
 }
 
-PUBLIC void put_irq_handler(u32 irq, irq_handler handler)
+PUBLIC void put_irq_handler(int irq, irq_handler handler)
 {
     disable_irq(irq);
     irq_table[irq] = handler;

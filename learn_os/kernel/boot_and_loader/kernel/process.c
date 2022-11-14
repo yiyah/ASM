@@ -466,9 +466,36 @@ PRIVATE int msg_receive(struct s_proc* current, int src, MESSAGE* m)
     return 0;
 }
 
-/*****************************************************************************
- *                                dump_proc
- *****************************************************************************/
+/**
+  * @brief  <Ring 0> Inform a proc that an interrupt has occured.
+  * @param task_nr  The task which will be informed.
+  */
+PUBLIC void inform_int(int task_nr)
+{
+    struct s_proc* p = proc_tables + task_nr;
+
+    if ((p->p_flags & RECEIVING) && /* dest is waiting for the msg */
+        ((p->p_recvfrom == INTERRUPT) || (p->p_recvfrom == ANY))) {
+        p->p_msg->source = INTERRUPT;
+        p->p_msg->type = HARD_INT;
+        p->p_msg = 0;
+        p->has_int_msg = 0;
+        p->p_flags &= ~RECEIVING; /* dest has received the msg */
+        p->p_recvfrom = NO_TASK;
+        assert(p->p_flags == 0);
+        unblock(p);
+
+        assert(p->p_flags == 0);
+        assert(p->p_msg == 0);
+        assert(p->p_recvfrom == NO_TASK);
+        assert(p->p_sendto == NO_TASK);
+    }
+    else {
+        p->has_int_msg = 1;
+    }
+}
+
+
 PUBLIC void dump_proc(struct s_proc* p)
 {
     char info[STR_DEFAULT_LEN];
@@ -510,10 +537,6 @@ PUBLIC void dump_proc(struct s_proc* p)
     sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); disp_color_str(info, text_color);
 }
 
-
-/*****************************************************************************
- *                                dump_msg
- *****************************************************************************/
 PUBLIC void dump_msg(const char * title, MESSAGE* m)
 {
     int packed = 0;

@@ -66,7 +66,7 @@ PUBLIC void init_keyboard()
     bNum_lock    = 1;
     bScroll_lock = 0;
 
-    put_irq_handler(KEYBOARD_IRQ, keyboard_handler);
+    put_irq_handler(KEYBOARD_IRQ, (irq_handler)keyboard_handler);
     enable_irq(KEYBOARD_IRQ);
 }
 

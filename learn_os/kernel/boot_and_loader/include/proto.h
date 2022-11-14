@@ -21,6 +21,8 @@ PUBLIC void disp_str(char* pszInfo);
 PUBLIC void disp_color_str(char* pszInfo, u8 color);
 PUBLIC void out_byte(u16 port, u8 value);
 PUBLIC u8   in_byte(u16 port);
+PUBLIC void port_read(u16 port, void* buf, int n);
+PUBLIC void port_write(u16 port, void* buf, int n);
 PUBLIC void disable_irq(u32 irq);
 PUBLIC void enable_irq(u32 irq);
 PUBLIC void enable_int();
@@ -34,10 +36,14 @@ void printx(char* s);
 PUBLIC void restart();
 PUBLIC void sys_call();
 
+/* kernel/hd.c */
+PUBLIC void task_hd();
+PUBLIC void hd_handler(int irq);
+
 /* i8259.c */
 PUBLIC void init_8259A();
-PUBLIC void spurious_irq(u32 irq);
-PUBLIC void put_irq_handler(u32 irq, irq_handler handler);
+PUBLIC void spurious_irq(int irq);
+PUBLIC void put_irq_handler(int irq, irq_handler handler);
 
 /* protect.c */
 PUBLIC void init_prot();
@@ -77,6 +83,9 @@ PUBLIC int send_recv(int function, int src_dest, MESSAGE* msg);
 PUBLIC int ldt_seg_linear(PROCESS* p, int idx);
 PUBLIC void* va2la(int pid, void* va);
 PUBLIC void reset_msg(MESSAGE* p);
+PUBLIC void inform_int(int task_nr);
+PUBLIC void dump_proc(struct s_proc* p);
+PUBLIC void dump_msg(const char * title, MESSAGE* m);
 
 /* keyboard.c */
 PUBLIC void init_keyboard();
@@ -99,6 +108,7 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args);
 PUBLIC int sprintf(char *buf, const char *fmt, ...);
 
 /* misc.c */
+PUBLIC void spin(char * func_name);
 PUBLIC void panic(const char *fmt, ...);
 
 #endif

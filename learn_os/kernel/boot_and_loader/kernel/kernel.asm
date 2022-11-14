@@ -219,10 +219,23 @@ hwint07:                ; Interrupt routine for irq 7 (printer)
 
 ; ---------------------------------
 %macro  hwint_slave     1
-        push    dword %1
-        call    spurious_irq
-        add     esp, 4
-        hlt
+    call    save
+    in      al, INT_S_CTLMASK               ; `.
+    or      al, (1 << (%1-8))               ;  | No more current interruption are allowed
+    out     INT_S_CTLMASK, al               ; /
+    mov     al, EOI                         ; `. reenable (set EOI)
+    out     INT_M_CTL, al                   ; / master 8259
+    nop                                     ; `. reenable (set EOI)
+    out     INT_S_CTL, al                   ; / slave 8259. Note that both need send EOI
+    sti
+    push    dword %1
+    call    [irq_table + 4 * %1]            ; interrupt handler
+    add     esp, 4
+    cli
+    in      al, INT_S_CTLMASK               ; `.
+    and     al, ~(1 << (%1-8))                  ;  | Allow interruption again
+    out     INT_S_CTLMASK, al               ; / because we had handlered once
+    ret                                     ; jmp to restar of restar_reenter
 %endmacro
 ; ---------------------------------
 

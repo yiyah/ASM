@@ -89,10 +89,15 @@
 #define PRINTER_IRQ     7
 #define AT_WINI_IRQ     14  /* at winchester */
 
+/* Hard Drive */
+#define SECTOR_SIZE     512
+
 /* tasks */
+/* 注意 TASK_XXX 的定义要与 global.c 中对应 */
 #define INTERRUPT       -10
 #define TASK_TTY        0
 #define TASK_SYS        1
+#define TASK_HD         2
 #define ANY             (NR_TASKS + NR_PROCS + 10)
 #define NO_TASK         (NR_TASKS + NR_PROCS + 20)
 
@@ -131,6 +136,9 @@ enum msgtype {
 
     /* SYS task */
     GET_TICKS,
+
+    /* message type for drivers */
+    DEV_OPEN = 1001,
 };
 
 #define RETVAL  u.m3.m3i1
