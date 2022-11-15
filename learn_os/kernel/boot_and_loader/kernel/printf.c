@@ -10,7 +10,7 @@
 int printf(const char* fmt, ...)
 {
     u32 len;
-    char buf[256];
+    char buf[256] = {0};
 
     va_list arg = (va_list) ((char*) (&fmt) + 4);
     len = vsprintf(buf, fmt, arg);

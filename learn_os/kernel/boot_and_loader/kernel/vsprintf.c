@@ -32,10 +32,18 @@ PUBLIC char* itoa(int value, char **p_str, int radix)
 }
 
 
+/**
+  * @brief  Replace the format controller in fmt with the corresponding parameter args 
+  *         save to buf
+  * @param  buf  a pointer to the final array
+  * @param  fmt  The formatted string
+  * @param  args list of parameters
+  * @retval 
+  */
 PUBLIC int vsprintf(char *buf, const char *fmt, va_list args)
 {
     char*   p;
-    char    tmp[256];
+    char    tmp[256] = {0};
     int     m;
     va_list p_next_arg = args;
 

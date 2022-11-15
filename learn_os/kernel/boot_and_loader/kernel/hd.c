@@ -106,7 +106,7 @@ PRIVATE void print_identify_info(u16* hdinfo)
     }
 
     int capabilities = hdinfo[49];
-    // TODO: need fix printl()
+
     printl("LBA supported: %s\n",
            (capabilities & 0x0200) ? "Yes" : "No");
 
